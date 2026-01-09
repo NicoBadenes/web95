@@ -1,12 +1,12 @@
 /**
  * @file src/main.js
- * @description Punto de entrada principal.
  */
 
 import { initBootSequence } from "./kernel/boot.js";
 import { wm } from './os/gui/window-manager.js'; //<--- IMPORTAR WM para test
 import { mk } from './os/utils/dom.js'; // <--- IMPORTAR MK para test
 import { taskbar } from './os/gui/taskbar.js';
+import { fs } from "./os/filesystem/vfs.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     // Iniciar secuencia de arranque
@@ -17,9 +17,19 @@ document.addEventListener('DOMContentLoaded', () => {
             //INICIALIZAR BARRA DE TAREAS
             taskbar.init();
 
-            //Ventana 1: Bienvenida (fondo)
+            //PRUEBA 1: Leer archivo del disco
+            //Intenta leer 'welcome.msg' desde el VFS
+            let welcomeText = ''
+            try {
+                welcomeText = fs.read('welcome.msg');
+            } catch(err){
+                welcomeText = 'Error loading file.';
+                console.error(err);
+            }
+
+            //Ventana 1: Bienvenida con texto del VFS
             const welcomeContent = mk('div', {
-                text: 'Welcome to WebOS v1.0. System Ready.',
+                text: welcomeText, //Usa el contenido leido del disco
                 attributes: { style: 'padding: 10px; font-family: sans-serif;'}   
             });
 
@@ -33,15 +43,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 content: welcomeContent
             });
 
-            //3. VENTANA 2: (frente - para probar foco y arrastre)
+            //PRUEBA 2: LISTAR DIRECTORIO SYSTEM
+            //Muestra que hay en la carpeta system dentro de la segunda ventana
+            const filesInSystem = fs.dir('system'); //Deberia devolver ['readme.txt', 'config.sys']
+
             const notesContent = mk('div', {
-                text: 'Try dragging this window over the other one. Click on the windows to swtich focus.',
-                attributes: { style: 'padding: 10px'}
+                //Une el array de archivos con saltos de linea
+                text: 'Files in /system:\n' + filesInSystem.join('\n'),
+                attributes: { style: 'padding: 10px; white-space: pre-line;'}//
             });
 
             wm.open({
-                id: 'readme',
-                title: 'Read Me.txt',
+                id: 'system-dir',
+                title: 'C:/system', //para simular q el usuario esta explorando
                 w: 300,
                 h: 200,
                 x: 250,
