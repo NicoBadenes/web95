@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>web-os</title>
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <link rel="stylesheet" href="./styles/main.css">
+</head>
+<body>
+    
+    <div id="boot-screen" class="full-screen-layer">
+        <div id="bios-text" class="console-text"></div> 
+    </div>
+
+    <div id="os-root" class="hidden">
+        <div id="desktop">
+            <div id="window-area"></div>
+        </div>
+
+        <nav id="taskbar">
+
+        </nav>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+/* 
+-WINDOW.CSS
+- Define la estructura y estética de las ventanas del sistema.
+- Uso intensivo de bordes "inset" y "outset" para efecto 3D.
+*/
+
+.window {
+    position: absolute;
+    background-color: var(--clr-silver);
+    padding: 3px;
+    box-shadow:
+        inset 1px 1px 0px var(--border-outset-light),
+        inset -1px -1px 0px var(--border-outset-dark),
+        1px 1px 0px var(--clr-black);
+    display: flex;
+    flex-direction: column;
+}
+
+/* La barra de titulo azul */
+.window-title-bar {
+    background-color: var(--clr-blue-dark);
+    color: var(--clr-white);
+    padding: 2px 4px;
+    margin-bottom: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+
+    user-select: none;
+}
+
+/* El area de contenido */
+
+.window-body {
+    flex-grow: 1;
+    margin: 2px;
+    padding: 10px;
+    background-color: var(--clr-white);
+    color: var(--clr-black);
+    overflow: auto;
+
+    /* */
+    border-top: 2px solid var(--border-inset-shadow);
+    border-left: 2px solid var(--border-inset-shadow);
+    border-right: 2px solid var(--border-inset-light);
+    border-bottom: 2px solid var(--border-inset-light);
+}
+
+/* Botones de control de ventana (Cerrar, Minimizar) */
+.window-controls{
+    display: flex;
+    gap: 2px;
+}
+
+.btn-window {
+    width: 16px;
+    height: 14px;
+    font-size: 10px;
+    font-weight: bold;
+    line-height: 10px;
+    text-align: center;
+    background-color: var(--clr-silver);
+    border: none;
+
+
+    box-shadow:
+        inset 1px 1px 0px var(--border-outset-light),
+        inset -1px -1px 0px var(--border-outset-dark);
+
+    cursor: pointer;
+}
+
+/* Efecto al presionar el boton (se hunde) */
+.btn-window:active {
+    box-shadow:
+        inset 1px 1px 0px var(--border-inset-shadow),
+        inset -1px -1px 0px var(--border-inset-light);
+    padding-top: 1px;
+}
