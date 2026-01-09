@@ -30,7 +30,7 @@ export async function initBootSequence() {
         "LOADING VIRTUAL FILE SYSTEM...",
         "MOUNTING DRIVE C: ...",
         "SYSTEM CHECK COMPLETE.",
-        "BOOTING WebOS..."
+        "BOOTING Web95..."
     ];
 
     for (const line of bootLines){

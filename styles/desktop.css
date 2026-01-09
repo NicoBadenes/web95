@@ -1,0 +1,63 @@
+/* 
+- DESKTOP.CSS
+- Estilos para los iconos del escritorio y su disposicion.
+*/
+
+/* Contenedor de iconos (capa detras de las ventanas) */
+#desktop-icons {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+
+    /* Flex en columna: Los iconos se apilan hacia abajo y luego saltan a la siguiente columna*/
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 20px;
+
+    z-index: 0; /* Al fondo */
+}
+
+/*  EL icono individual */
+.desktop-icon{
+    width: 70px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    text-align: center;
+}
+
+/* La imagen (emoji por ahora) */
+.icon-img{
+    width: 32px;
+    height: 32px;
+    font-size: 32px;
+    margin-bottom: 5px;
+    /* Actualizar a imagen en el futuro */
+}
+
+/* Etiqueta de texto */
+.icon-label {
+    color: var(--clr-white);
+    font-size: 12px;
+    text-shadow: 1px 1px 1px var(--clr-black); /*Sombra para poder leer sobre cualquier fondo*/
+    padding: 2px;
+    word-break: break-word; /*Si el nombre es muy largo, baja de linea*/
+}
+
+/* ESTADO: Seleccionado (Un click) */
+.desktop-icon.selected .icon-img {
+    filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.5));
+}
+
+.desktop-icon.selected .icon-label {
+    background-color: var(--clr-blue-dark); /* Fondo azul clasico */
+    border: 1px dotted var(--clr-white); /* Borde punteado clasico */
+    text-shadow: none;
+}
+
