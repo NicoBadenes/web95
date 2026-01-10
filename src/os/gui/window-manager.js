@@ -80,8 +80,8 @@ class WindowManager{
         //ACTIVAR FISICA
         this.makeDraggable(windowNode,titleBar);
 
-        //Avisar a la barra de tareas
-        taskbar.addTask(id, config.title);
+        // === Pasamos una funcion "CallBack" ===
+        taskbar.addTask(id, config.title, () => this.toggleWindow(id));
 
         //Darle foco inmediato a la nueva ventana
         this.focus(windowNode);
@@ -120,6 +120,26 @@ class WindowManager{
 
         //Actualizar el puntero
         this.activeWindow = targetNode;
+    }
+
+    /**
+     * Minimiza o restaura una ventana segun su estado.
+     */
+    toggleWindow(id) {
+        //Buscamos la ventana en el array por su ID
+        const win = this.windows.find(w => w.id === id);
+        if (!win) return;
+
+        //CASO 1: Si es la ventana activa -> MINIMIZAR
+        if (this.activeWindow === win && !win.classList.contains('minimized')) {
+            win.classList.add('minimized');
+            this.activeWindow = null;
+        }
+        //CASO 2: Si esta minimizada O no es la activa -> RESTAURAR / ENFOCAR
+        else {
+            win.classList.remove('minimized');
+            this.focus(win);
+        }
     }
 
     /**

@@ -58,7 +58,7 @@ class Taskbar{
     /**
      * Agrega un boton a la barra de tareas.
      */
-    addTask(windowId, title) {
+    addTask(windowId, title, onToggle) {
         const btn = mk('button', {
             text: title,
             className: 'task-btn',
@@ -81,8 +81,10 @@ class Taskbar{
                 `
             },
             events: {
-                //Futuro: Al hacer click, minimizar o restaurar la ventana
-                click: () => console.log(`Task clicked: ${windowId}`)
+                //Al hacer click, minimizar o restaurar la ventana
+                click: () => {
+                    if (onToggle) onToggle();
+                }
             }
         });
 
