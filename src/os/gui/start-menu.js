@@ -1,0 +1,108 @@
+/**
+ * @file src/os/gui/start-menu.js
+ * @description Logica del menu de inicio clasico
+ */
+
+import { mk, $ } from '../utils/dom.js';
+import { wm } from './window-manager.js';
+import { desktop } from './desktop.js';
+import { fs } from '../filesystem/vfs.js';
+
+class StartMenu {
+    constructor() {
+        this.element = null;
+        this.isVisible = false;
+    }
+
+    init() {
+        //1. Crear la estructura
+        this.element = mk('div', { id: 'start-menu' });
+
+        //2. Franja lateral "Web95"
+        const sideBanner = mk('div', {
+            className: 'start-side-banner',
+            children: [
+                mk('span', { className: 'start-side-text', text: 'Web95' })
+            ]
+        });
+
+        // 3. Opciones del menu
+        const optionsContainer = mk('div', { className: 'start-options' });
+
+        const items = [
+            {
+                icon: '📁', label: 'Documents',
+                action: () => {
+                    //Abre la carpeta root/documents
+                    const docsNode = fs.resolve('documents');
+                    desktop.openFileOrFolder('documents', docsNode);
+                }
+            },
+            {
+                icon: '📝', label: 'Notepad',
+                action: () => {
+                    //Abre notepad vacio
+                    desktop.openFileOrFolder('Untitled.txt', { type: 'file', content: ''});
+                }
+            },
+            {
+                icon: '💻', label: 'Run...',
+                action: () => alert('Command Prompt coming soon!')
+            },
+            //Separador visual (por ahora simple)
+            {
+                icon: '🛑', label: 'Shut Down...',
+                action: () => {
+                    if(confirm('Are you sure you want to restart the computer?')) {
+                        window.location.reload(); 
+                    }
+                }
+            }
+        ];
+
+        //Crear los items
+        items.forEach(item => {
+            const div = mk('div', {
+                className: 'start-item',
+                children: [
+                    mk('span', { className: 'start-icon', text: item.icon }),
+                    mk('span', { text: item.label })
+                ],
+                events: {
+                    click: () => {
+                        this.toggle(); //Cerrar menu
+                        item.action(); //Ejectuar accion
+                    }
+                }
+            });
+            optionsContainer.appendChild(div);
+        });
+
+        // 4.Ensamblar
+        this.element.appendChild(sideBanner);
+        this.element.appendChild(optionsContainer);
+        document.body.appendChild(this.element);
+
+        //5. Detectar clicks fuera para cerrar
+        document.addEventListener('mousedown', (e) => {
+            if(this.isVisible &&
+                !this.element.contains(e.target) &&
+                !e.target.classList.contains('btn-start')) { //Ignorar el boton de start
+                    this.toggle();
+                }
+        });
+    }
+
+    toggle() {
+        this.isVisible = !this.isVisible;
+        if (this.isVisible) {
+            this.element.classList.add('visible');
+            $('.btn-start').classList.add('active'); //Efecto presionado para el btn
+        } else{
+            this.element.classList.remove('visible');
+            $('.btn-start').classList.remove('active');
+        }
+    }
+}
+
+export const startMenu = new StartMenu();

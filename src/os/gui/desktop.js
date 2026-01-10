@@ -162,7 +162,7 @@ class Desktop{
 
         }else {
             // === MODO ARCHIVO (NOTEPAD) ===
-            const appContent = notepad.run(name);
+            const appContent = notepad.run(name, node.content);
 
             wm.open({
                 id: `notepad-${name}`,

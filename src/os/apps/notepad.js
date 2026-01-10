@@ -13,13 +13,20 @@ class NotepadApp {
      * @param {string} filePath - Ruta del archivo a abrir
      * @returns {HTMLElement} - El contenido visual de la app.
      */
-    run(filePath) {
+    run(filePath, initialContent = null) {
         //1. Leer contenido actual
         let content = '';
-        try {
+
+        if (initialContent !== null){
+            // Si hay contenido, se usa
+            content = initialContent;
+        } else{
+            //Si no, intenta leer del disco
+            try {
             content = fs.read(filePath);
-        }catch(e){
-            content = 'Error loading file.';
+            }catch(e){
+                content = 'Error loading file.';
+            }
         }
 
         //2. Crear el area de texto

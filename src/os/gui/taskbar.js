@@ -17,7 +17,6 @@ class Taskbar{
         const startBtn = mk('button', {
             className: 'btn-start',
             children: [ mk('span', { text: 'Start' }) ],
-            events: { click: () => console.log('Start Menu Toggled') }
         });
 
         //2. Separador y Contenedor de Tareas (NUEVO)
@@ -100,6 +99,20 @@ class Taskbar{
         if (btn) {
             btn.remove();
             delete this.tasks[windowId];
+        }
+    }
+
+    /**
+     * Permite asignar la accion del boton Start desde afuera.
+     * @param {Function} callback - La funcion a ejecutar al hacer click.
+     */
+    onStartClick(callback) {
+        const btn = this.element.querySelector('.btn-start');
+        if (btn) {
+            btn.onclick = (e) => {
+                e.stopPropagation(); //Evita que el click cierre el menu inmediatamente
+                callback();
+            };
         }
     }
 }
