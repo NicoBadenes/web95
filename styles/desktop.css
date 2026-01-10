@@ -3,6 +3,21 @@
 - Estilos para los iconos del escritorio y su disposicion.
 */
 
+#desktop {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position:relative;
+
+    background-color: #008080;
+
+    background-image: url('../images/web95LOGO.png');
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
 /* Contenedor de iconos (capa detras de las ventanas) */
 #desktop-icons {
     position: absolute;
