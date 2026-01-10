@@ -5,64 +5,100 @@
 
 import { mk, $ } from '../utils/dom.js';
 
-class Taskbar {
+class Taskbar{
     constructor() {
         this.element = $('#taskbar');
+        this.tasksContainer = null; //Donde van los botones de las ventanas
+        this.tasks = {}; //Registro de tareas activas { id: element }
     }
 
-    /**
-     * Inicializa la barra de tareas.
-     */
     init() {
-        // 1. Crear boton de Inicio
-        const startBtn = mk ('button', {
+        //1. Boton Start
+        const startBtn = mk('button', {
             className: 'btn-start',
-            children: [
-                //Simulacion de icono de windows con texto (remplazar despues por una imagen)
-                mk('span', { text: 'Start'})
-            ],
-            events: {
-                click: () => console.log('Start Menu Toggled') //Futura funcionalidad
+            children: [ mk('span', { text: 'Start' }) ],
+            events: { click: () => console.log('Start Menu Toggled') }
+        });
+
+        //2. Separador y Contenedor de Tareas (NUEVO)
+        // Crea un div flexible que ocupa el espacio central
+        this.tasksContainer = mk('div', {
+            attributes : {
+                style: 'display: flex; gap: 2px; flex-grow: 1; padding-left: 5px; overFlow-x: auto;'
             }
         });
 
-        // 2. Crear Area de notificaciones (Tray) y Reloj
-        const clockText = mk('span', { className: 'system-clock', text: '00:00 AM'});
-
+        //3. Area derecha (Reloj)
+        const clockText = mk('span', { className: 'system-clock', text: '00:00' });
         const tray = mk('div', {
             className: 'tray-area',
             children: [clockText]
         });
 
-        //3. Inyectar barra
+        //4. Inyectar todo en orden
+        this.element.innerHTML = '';
         this.element.appendChild(startBtn);
-        //Aca iria la lista de tareas (ventanas abiertas) en el medio
-        const spacer = mk('div', { attributes: { style: 'flex-grow: 1; '}});
-        this.element.appendChild(spacer);
+        this.element.appendChild(this.tasksContainer);
         this.element.appendChild(tray);
 
-        // 4. Iniciar el reloj
         this.startClock(clockText);
     }
 
-    /**
-     * Actualiza el reloj cada minuto
-     * @param {HTMLElement} elementElement
-     */
-    startClock(clockElement) {
+    startClock(clockElement){
         const update = () => {
             const now = new Date();
-            //Formato de hora corta en ingles
-            const timeString = now.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
+            clockElement.textContent = now.toLocaleTimeString('en-US', {
+                hour: 'numeric', minute: '2-digit', hour12: true
             });
-            clockElement.textContent = timeString;
         };
+        update();
+        setInterval(update, 1000);
+    }
 
-        update(); //Ejectuar inmediatamente
-        setInterval(update, 1000); //Actualizar cada segundo
+    /**
+     * Agrega un boton a la barra de tareas.
+     */
+    addTask(windowId, title) {
+        const btn = mk('button', {
+            text: title,
+            className: 'task-btn',
+            attributes: {
+                style: `
+                    height: 22px;
+                    padding: 0 5px;
+                    min-width: 100px;
+                    max-width: 150px;
+                    text-align: left;
+                    font-size: 12px;
+                    white-space: nowrap;
+                    overflow:hidden;
+                    text-overflow: ellipsis;
+                    border: 2px solid var(--clr-white);
+                    border-right-color: var(--clr-black);
+                    border-bottom-color: var(--clr-black);
+                    background: var(--clr-silver);
+                    cursor: pointer;
+                `
+            },
+            events: {
+                //Futuro: Al hacer click, minimizar o restaurar la ventana
+                click: () => console.log(`Task clicked: ${windowId}`)
+            }
+        });
+
+        this.tasksContainer.appendChild(btn);
+        this.tasks[windowId] = btn;
+    }
+
+    /** 
+     * Elimina un boton cuando se cierra la ventana.
+    */
+    removeTask(windowId) {
+        const btn = this.tasks[windowId];
+        if (btn) {
+            btn.remove();
+            delete this.tasks[windowId];
+        }
     }
 }
 

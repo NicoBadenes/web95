@@ -4,7 +4,7 @@
  */
 
 import { mk , $ } from '../utils/dom.js';
-
+import { taskbar } from './taskbar.js';
 class WindowManager{
     constructor(){
         this.desktopArea = $('#window-area');
@@ -61,7 +61,7 @@ class WindowManager{
                 //Posicion inicial dinamica (o por defecto 100,100)
                 style: `
                     width: ${config.w}px;
-                    height ${config.h}px;
+                    height: ${config.h}px;
                     top: ${config.y || 100}px;
                     left: ${config.x || 100}px;
                     z-index: ${this.baseZIndex}
@@ -80,6 +80,9 @@ class WindowManager{
         //ACTIVAR FISICA
         this.makeDraggable(windowNode,titleBar);
 
+        //Avisar a la barra de tareas
+        taskbar.addTask(id, config.title);
+
         //Darle foco inmediato a la nueva ventana
         this.focus(windowNode);
     }
@@ -89,6 +92,9 @@ class WindowManager{
      */
 
     close(windowNode){
+        //Quitar de la barra de tareas usando el ID
+        taskbar.removeTask(windowNode.id);
+    
         windowNode.remove();
         this.windows = this.windows.filter(w => w !== windowNode);
     }
