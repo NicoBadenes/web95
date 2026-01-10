@@ -3,7 +3,7 @@
  * @description v2.0 - Gestion de ventanas con Drag & Drop y Ssitema de foco (Z-Index).
  */
 
-import { mk , $ } from '../utils/dom.js';
+import { mk , $ } from '../../utils/dom.js';
 import { taskbar } from './taskbar.js';
 class WindowManager{
     constructor(){

@@ -3,8 +3,8 @@
  * @description Gestiona los iconos del escritorio y sus interacciones.
  */
 
-import { mk, $} from '../utils/dom.js';
-import { fs } from '../filesystem/vfs.js';
+import { mk, $} from '../../utils/dom.js';
+import { fs } from '../../filesystem/vfs.js';
 import { wm } from './window-manager.js'
 import { notepad } from '../apps/notepad.js';
 

@@ -3,10 +3,10 @@
  * @description Logica del menu de inicio clasico
  */
 
-import { mk, $ } from '../utils/dom.js';
+import { mk, $ } from '../../utils/dom.js';
 import { wm } from './window-manager.js';
 import { desktop } from './desktop.js';
-import { fs } from '../filesystem/vfs.js';
+import { fs } from '../../filesystem/vfs.js';
 
 class StartMenu {
     constructor() {

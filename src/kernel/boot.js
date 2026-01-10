@@ -3,7 +3,7 @@
  * @description Gestiona la secuencia de inicio simulada (BIOS POST).
  */
 
-import { mk, $ } from '../os/utils/dom.js';
+import { mk, $ } from '../utils/dom.js';
 
 const BOOT_CONFIG = {
     LINE_DELAY: 400, //Tiempo entre lineas

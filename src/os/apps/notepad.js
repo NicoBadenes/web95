@@ -3,8 +3,8 @@
  * @description Editor de texto simple
  */
 
-import { mk } from '../utils/dom.js';
-import { fs } from '../filesystem/vfs.js';
+import { mk } from '../../utils/dom.js';
+import { fs } from '../../filesystem/vfs.js';
 
 class NotepadApp {
 

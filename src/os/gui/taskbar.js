@@ -3,7 +3,7 @@
  * @description Gestiona la barra de tareas, el boton de inicio y el reloj.
  */
 
-import { mk, $ } from '../utils/dom.js';
+import { mk, $ } from '../../utils/dom.js';
 
 class Taskbar{
     constructor() {
