@@ -55,6 +55,25 @@ class VirtualFileSystem {
     }
 
     /**
+     * Guarda contenido en un archivo existente.
+     * @param {string} path
+     * @param {string} content
+     */
+    write(path,content) {
+        const node = this.resolve(path);
+
+        if(!node) {
+            throw new Error (`File not found: ${path}`);
+        }
+        if (node.type != 'file'){
+            throw new Error(`Cannot write to a directory: ${path}`);
+        }
+
+        node.content = content;
+        console.log(`Saved file: ${path}`);
+    }
+
+    /**
      * Lista los archivos de una carpeta.
      * @param {string} path
      * @param {string[]} Array con nombres de archivos.

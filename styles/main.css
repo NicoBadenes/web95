@@ -2,6 +2,7 @@
 @import url('./window.css');
 @import url('./taskbar.css');
 @import url('./desktop.css');
+@import url('./apps.css');
 
 /* Futuros imports 
 @import url('./components.css');
