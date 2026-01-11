@@ -45,3 +45,48 @@
     padding: 5px;
     outline: none;
 }
+
+
+/* --- TERMINAL / COMMAND PROMPT --- */
+.app-terminal {
+    background-color: #000;
+    color: #c0c0c0;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    padding: 5px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    cursor: text;
+}
+
+/*  Area donde aparece el historial de lo escrito (ni idea el nombre) */
+.terminal-output {
+    flex-grow: 1;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    margin-bottom: 5px;
+}
+
+/* Input line */
+.terminal-input-line {
+    display: flex;
+    align-items: center;
+}
+
+.terminal-prompt {
+    color: #c0c0c0;
+    margin-right: 5px;
+}
+
+.terminal-input{
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-family: inherit;
+    font-size: inherit;
+    flex-grow: 1;
+    outline: none;
+    caret-color: #fff;
+}

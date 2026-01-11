@@ -4,9 +4,10 @@
  */
 
 import { mk, $ } from '../../utils/dom.js';
-import { wm } from './window-manager.js';
-import { desktop } from './desktop.js';
+import { wm } from '../gui/window-manager.js';
+import { desktop } from '../gui/desktop.js';
 import { fs } from '../../filesystem/vfs.js';
+import { terminal } from '../apps/terminal.js';
 
 class StartMenu {
     constructor() {
@@ -41,13 +42,22 @@ class StartMenu {
             {
                 icon: '📝', label: 'Notepad',
                 action: () => {
-                    //Abre notepad vacio
                     desktop.openFileOrFolder('Untitled.txt', { type: 'file', content: ''});
                 }
             },
             {
                 icon: '💻', label: 'Run...',
-                action: () => alert('Command Prompt coming soon!')
+                action: () => {
+                    // Lanza la terminal
+                    const termContent = terminal.run();
+
+                    wm.open({
+                        id: 'cmd-prompt',
+                        title: 'MS-DOS Prompt',
+                        w: 500, h: 300,
+                        content: termContent
+                    });
+                }
             },
             //Separador visual (por ahora simple)
             {

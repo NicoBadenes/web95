@@ -23,14 +23,23 @@ export async function initBootSequence() {
     biosScreen.style.padding = '20px';
 
     const bootLines = [
-        "BIOS DATE 01/07/26 20:00:00 VER 1.0.0",
-        "CPU: WebAssembly Virtual Core @ 4.0GHZ",
-        "640k RAM SYSTEM... OK",
-        "INITIALIZING VIDEO ADAPTER... OK",
-        "LOADING VIRTUAL FILE SYSTEM...",
-        "MOUNTING DRIVE C: ...",
-        "SYSTEM CHECK COMPLETE.",
-        "BOOTING Web95..."
+        "PhoenixBIOS 4.0 Release 6.0",
+        "Copyright (C) 1985-1995 Phoenix Technologies Ltd.",
+        "",
+        "CPU: Intel Pentium 133MHz",
+        "640K System RAM Passed",
+        "15360K Extended RAM Passed",
+        "512K Cache SRAM Passed",
+        "",
+        "System BIOS shadowed",
+        "Video BIOS shadowed",
+        "",
+        "Mouse initialized",
+        "Detecting HDD Primary Master... QUANTUM FIREBALL 1.2GB",
+        "Detecting HDD Primary Slave... None",
+        "Detecting CD-ROM Secondary Master... SONY CD-ROM 4X",
+        "",
+        "BOOTING Web95"
     ];
 
     for (const line of bootLines){
