@@ -47,6 +47,16 @@ export const INITIAL_DISK = {
         'welcome.msg': {
             type: 'file',
             content: 'Welcome to Web95'
+        },
+
+        'games': {
+            type: 'dir',
+            children: {
+                'snake.exe': {
+                    type: 'file',
+                    content: 'Binary content' //Placeholder
+                }
+            }
         }
     }
 };

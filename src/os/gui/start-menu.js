@@ -8,6 +8,7 @@ import { wm } from '../gui/window-manager.js';
 import { desktop } from '../gui/desktop.js';
 import { fs } from '../../filesystem/vfs.js';
 import { terminal } from '../apps/terminal.js';
+import { snakeGame } from '../apps/snake.js';
 
 class StartMenu {
     constructor() {
@@ -45,6 +46,19 @@ class StartMenu {
                     desktop.openFileOrFolder('Untitled.txt', { type: 'file', content: ''});
                 }
             },
+
+            {
+                icon: '🐍', label: 'Snake Game',
+                action: () => {
+                    wm.open({
+                        id: 'snake',
+                        title: 'Snake',
+                        w: 420, h: 460,
+                        content: snakeGame.run()
+                    });
+                }
+            },
+            
             {
                 icon: '💻', label: 'Run...',
                 action: () => {
@@ -59,6 +73,7 @@ class StartMenu {
                     });
                 }
             },
+            
             //Separador visual (por ahora simple)
             {
                 icon: '🛑', label: 'Shut Down...',
