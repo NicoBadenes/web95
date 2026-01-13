@@ -38,6 +38,11 @@ export const INITIAL_DISK = {
             }
         },
 
+        'logo.png': {
+            type: 'file',
+            content: './images/web95LOGO.png'
+        },
+
         //Archivo suelto en la raiz
         'welcome.msg': {
             type: 'file',

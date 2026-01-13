@@ -7,6 +7,7 @@ import { mk, $} from '../../utils/dom.js';
 import { fs } from '../../filesystem/vfs.js';
 import { wm } from './window-manager.js'
 import { notepad } from '../apps/notepad.js';
+import { imageViewer } from '../apps/image-viewer.js';
 
 class Desktop{
     constructor() {
@@ -139,10 +140,6 @@ class Desktop{
                     }
                 });
 
-                //Añadir iconos
-                const icon = childNode => childNode.type === 'dir' ? '📁 ' : '📄 ';
-                //Resolver el nodo para saber el icono, por ahora texto simple para no complicarla.
-
                 listContainer.appendChild(item);
             });
 
@@ -161,15 +158,35 @@ class Desktop{
             });
 
         }else {
-            // === MODO ARCHIVO (NOTEPAD) ===
-            const appContent = notepad.run(name, node.content);
+            // === MODO ARCHIVO (LOGICA DE EXTENSIONES) ===
+            const ext = name.split('.').pop().toLowerCase();
 
-            wm.open({
+            // Importaciones dinamicas (Lazy loading) pueden ir aca
+            // pero por ahora se va a usar las globales que importe arriba.
+
+            if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)){
+
+                // --- ABRIR CON IMAGE VIEWER ---
+                const appContent = imageViewer.run(name, node.content);
+
+                wm.open({
+                    id: `img-${name}`,
+                    title: `${name} - Image Viewer`,
+                    w: 400, h: 400, // Ventana mas cuadrada para fotos
+                    content: appContent
+                });
+            } else{
+
+                // --- ABRIR CON NOTEPAD ---
+                const appContent = notepad.run(name, node.content);
+            
+                wm.open({
                 id: `notepad-${name}`,
                 title: `${name} - Notepad`,
                 w: 400, h: 300,
                 content: appContent
-            });
+                });   
+            }
         }
     }
 }
