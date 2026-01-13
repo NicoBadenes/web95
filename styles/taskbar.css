@@ -76,3 +76,42 @@
     font-size: 12px;
     margin: 0;
 }
+
+/* --- BOTONES DE VENTANAS (TASK BUTTONS) --- */
+.task-btn{
+    height: 22px;
+    padding: 0 5px;
+    min-width: 100px;
+    max-width: 150px;
+
+    text-align: left;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    background: var(--clr-silver);
+    cursor: pointer;
+    border: none;
+    margin-right: 2px;
+
+    /* Borde 3D "Hacia afuera" (Outset) usando sombras */
+    box-shadow:
+    inset 1px 1px 0px var(--border-outset-light),
+    inset -1px -1px 0px var(--border-outset-dark),
+    1px 1px 0px var(--clr-black);
+}
+
+/* ESTADO ACTIVO */
+.task-btn.active{
+    /* Borde 3D */
+    box-shadow:
+        inset 1px 1px 0px var(--border-inset-shadow),
+        inset -1px -1px 0px var(--border-inset-light);
+
+    background-color: #dfdfdf;
+    font-weight: bold;
+
+    padding-top: 2px;
+    padding-left: 6px;
+}

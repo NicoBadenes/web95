@@ -120,22 +120,26 @@ class WindowManager{
 
         //Actualizar el puntero
         this.activeWindow = targetNode;
+
+        // Avisar a la barra de tareas
+        taskbar.setActive(targetNode.id);
     }
 
     /**
      * Minimiza o restaura una ventana segun su estado.
      */
     toggleWindow(id) {
-        //Buscamos la ventana en el array por su ID
         const win = this.windows.find(w => w.id === id);
         if (!win) return;
 
-        //CASO 1: Si es la ventana activa -> MINIMIZAR
+        //CASO 1: MINIMIZAR
         if (this.activeWindow === win && !win.classList.contains('minimized')) {
             win.classList.add('minimized');
             this.activeWindow = null;
+
+            taskbar.setActive(null);
         }
-        //CASO 2: Si esta minimizada O no es la activa -> RESTAURAR / ENFOCAR
+        //CASO 2: RESTAURAR
         else {
             win.classList.remove('minimized');
             this.focus(win);
@@ -143,55 +147,49 @@ class WindowManager{
     }
 
     /**
-     * MOTOR DE FISICA: Logica de Arrastrar y Soltar.
+     * MOTOR DE FISICA: Logica de Arrastrar y Soltar (Optimizado).
      * @param {HTMLElement} element - La ventana completa.
-     * @param {HTMLElement} handle - La barra de titulo (desde donde se arrastra).
+     * @param {HTMLElement} handle - La barra de titulo.
      */
-    makeDraggable(element, handle) {
-        let isDragging = false;
+    makeDraggable(element, handle) {   
         let startX, startY, initialLeft, initialTop;
 
-        //A. INICIO DEL ARRASTRE
+        // Funcion que se ejecuta al mover el mouse
+        const onMouseMove = (e) => {
+            e.preventDefault(); 
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            element.style.left = `${initialLeft + dx}px`;
+            element.style.top = `${initialTop + dy}px`;
+        };
+
+        // Funcion que se ejecuta al soltar el click
+        const onMouseUp = () => {
+            document.body.style.cursor = 'default';
+
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        };
+
+        // INICIO del arrastre
         handle.addEventListener('mousedown', (e) => {
-            if (e.button !== 0) return; //Solo click izquierdo
+            if (e.button !== 0) return; // Solo click izquierdo
 
-            isDragging = true;
-
-            // Guardar donde estaba el mouse
             startX = e.clientX;
             startY = e.clientY;
 
-            //Guardar donde estaba la ventana
             const rect = element.getBoundingClientRect();
             initialLeft = rect.left;
             initialTop = rect.top;
 
-            //Feedback visual cursor
             document.body.style.cursor = 'move';
-        });
 
-        //B. DURANTE EL ARRASTRE (movimiento)
-        //Se usa 'window para no perder el evento si el mouse sale rapido de la ventana
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
+            
 
-            e.preventDefault(); //evita seleccionar texto sin querer
-
-            //Matematica del movimiento: (posicion actual- posicion inicial)
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-
-            //Aplicar nueva posicion
-            element.style.left = `${initialLeft + dx}px`;
-            element.style.top = `${initialTop + dy}px`;
-        });
-
-        //C. FIN DEL ARRASTRE
-        window.addEventListener('mouseup', () => {
-            if(isDragging) {
-                isDragging = false;
-                document.body.style.cursor = 'default';
-            }
+            //
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
         });
     }
 }

@@ -55,32 +55,28 @@ class Taskbar{
     }
 
     /**
+     * Marca visualmente el boton de la ventana activa como "presionado".
+     * @param {string|null} windowId - ID de la ventana activa (o null si no hay ninguna).
+     */
+    setActive(windowId) {
+        //1. Resetear todos los botones (sacar clase active)
+        Object.values(this.tasks).forEach(btn => btn.classList.remove('active'));
+
+        //2. Activar solo el indicado
+        if (windowId && this.tasks[windowId]) {
+            this.tasks[windowId].classList.add('active');
+        }
+    }
+
+
+    /**
      * Agrega un boton a la barra de tareas.
      */
     addTask(windowId, title, onToggle) {
         const btn = mk('button', {
             text: title,
             className: 'task-btn',
-            attributes: {
-                style: `
-                    height: 22px;
-                    padding: 0 5px;
-                    min-width: 100px;
-                    max-width: 150px;
-                    text-align: left;
-                    font-size: 12px;
-                    white-space: nowrap;
-                    overflow:hidden;
-                    text-overflow: ellipsis;
-                    border: 2px solid var(--clr-white);
-                    border-right-color: var(--clr-black);
-                    border-bottom-color: var(--clr-black);
-                    background: var(--clr-silver);
-                    cursor: pointer;
-                `
-            },
             events: {
-                //Al hacer click, minimizar o restaurar la ventana
                 click: () => {
                     if (onToggle) onToggle();
                 }
