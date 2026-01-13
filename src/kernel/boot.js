@@ -4,6 +4,7 @@
  */
 
 import { mk, $ } from '../utils/dom.js';
+import { audio } from '../utils/audio.js';
 
 const BOOT_CONFIG = {
     LINE_DELAY: 400, //Tiempo entre lineas
@@ -57,4 +58,12 @@ export async function initBootSequence() {
     //CAMBIO VISUAL FINAL: Fondo "Teal" de windows 95
     document.body.style.backgroundColor = 'var(--clr-teal)';
     console.log("System Booted.");
+
+    // --- SONIDO DE INICIO ---
+    try {
+        await audio.playStartupSound();
+        console.log("System Booted with Sound.");
+    } catch (err) {
+        console.warn("Audio blocked (Autoplay policy). Click anywhere to enable audio later.")
+    }
 }
