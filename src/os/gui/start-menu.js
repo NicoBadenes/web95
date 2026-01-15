@@ -9,6 +9,7 @@ import { desktop } from '../gui/desktop.js';
 import { fs } from '../../filesystem/vfs.js';
 import { terminal } from '../apps/terminal.js';
 import { snakeGame } from '../apps/snake.js';
+import { calculator } from '../apps/calculator.js';
 
 class StartMenu {
     constructor() {
@@ -44,6 +45,18 @@ class StartMenu {
                 icon: '📝', label: 'Notepad',
                 action: () => {
                     desktop.openFileOrFolder('Untitled.txt', { type: 'file', content: ''});
+                }
+            },
+
+            {
+                icon: '🖩', label: 'Calculator',
+                action: () => {
+                    wm.open({
+                        id: 'calc',
+                        title: 'Calculator',
+                        w: 250, h:320,
+                        content: calculator.run()
+                    });
                 }
             },
 

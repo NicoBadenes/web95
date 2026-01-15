@@ -1,0 +1,58 @@
+/* CALCULADORA STYLE */
+.app-calculator {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    background-color: var(--clr-silver);
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* Pantalla LCD */
+.calc-display {
+    background-color: white;
+    border: 2px inset var(--border-inset-light); 
+    height: 35px;
+    margin-bottom: 10px;
+    text-align: right;
+    font-family: 'Courier New', monospace;
+    font-size: 20px;
+    padding: 5px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+/* Grilla de Botones */
+.calc-keys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    flex-grow: 1; 
+}
+
+/* Botones Generales */
+.calc-btn {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: var(--clr-silver);
+
+    /* Efecto 3D Windows 95 */
+    border: none;
+    box-shadow: 
+        inset 1px 1px 0px var(--border-outset-light),
+        inset -1px -1px 0px var(--border-outset-dark),
+        1px 1px 0px var(--clr-black);
+}
+
+.calc-btn:active {
+    box-shadow:
+        inset 1px 1px 0px var(--border-inset-shadow),
+        inset -1px -1px 0px var(--border-inset-light);
+    padding-top: 2px;
+    padding-left: 2px;
+}
+
+.btn-red { color: darkred; }
+.btn-blue { color: darkblue; }
