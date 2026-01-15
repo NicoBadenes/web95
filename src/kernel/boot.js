@@ -60,10 +60,10 @@ export async function initBootSequence() {
     console.log("System Booted.");
 
     // --- SONIDO DE INICIO ---
-    try {
-        await audio.playStartupSound();
-        console.log("System Booted with Sound.");
-    } catch (err) {
-        console.warn("Audio blocked (Autoplay policy). Click anywhere to enable audio later.")
-    }
+    audio.playStartupSound()
+        .then(() => console.log("System Booted with Sound."))
+        .catch(err => console.warn("Audio blocked by browser (Autoplay). System continued anyway."));
+    
+    // El codigo sigue ejecutandose igualmente, cargando iconos y UI
+    console.log("System Booted.");
 }
