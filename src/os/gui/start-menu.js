@@ -68,7 +68,8 @@ class StartMenu {
                         id: 'calc',
                         title: 'Calculator',
                         w: 250, h:320,
-                        content: calculator.run()
+                        content: calculator.run(),
+                        fixedSize: true
                     });
                 }
             },

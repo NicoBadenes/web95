@@ -20,6 +20,8 @@ class WindowManager{
     open(config) {
         const id = `win-${config.id || Date.now()}`;
 
+        const isFixed = config.fixedSize || false;
+
         //1. Crear botones de control (min, max, close)
 
         // A. Minimizar
@@ -43,10 +45,17 @@ class WindowManager{
             events: {
                 click: (e) => {
                     e.stopPropagation();
-                    this.toggleMaximize(windowNode);
+                    if(!isFixed) this.toggleMaximize(windowNode);
                 }
             }
         });
+
+        // Si es fixed, deshabilitar visualmente el boton
+        if(isFixed) {
+            btnMax.disabled = true;
+            btnMax.style.color = '#888';
+            btnMax.style.cursor = 'default';
+        }
 
         // C. Cerrar
         const btnClose = mk('button', {
@@ -77,7 +86,10 @@ class WindowManager{
             events: {
                 //Al hacer click en la barra, la ventana se corre al frente
                 mousedown: () => this.focus(windowNode),
-                dblclick: () => this.toggleMaximize(windowNode)
+
+                dblclick: () => {
+                    if (!isFixed) this.toggleMaximize(windowNode);
+                }
             }
         });
 
