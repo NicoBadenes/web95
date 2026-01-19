@@ -1,0 +1,56 @@
+/* BROWSER STYLE */
+.app-browser {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--clr-silver);
+}
+
+/* Barra de herrramientas superiror */
+.browser-toolbar{
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border-bottom: 2px solid var(--border-outset-dark);
+}
+
+.browser-input {
+    flex-grow: 1;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 13px;
+    padding: 2px 5px;
+    border: 2px inset var(--border-inset-light);
+}
+
+.browser-btn {
+    min-width: 40px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: var(--clr-silver);
+    border: none;
+    box-shadow: 
+        inset 1px 1px 0px var(--border-outset-light),
+        inset -1px -1px 0px var(--border-outset-dark),
+        1px 1px 0px var(--clr-black);
+}
+
+.browser-btn:active {
+    box-shadow: 
+        inset 1px 1px 0px var(--border-inset-shadow),
+        inset -1px -1px 0px var(--border-inset-light);
+    padding-top: 2px;
+    padding-left: 2px;
+}
+
+/* Area del Iframe */
+.browser-content {
+    flex-grow: 1;
+    width: 100%;
+    border: none;
+    background-color: white;
+    border-top: 2px solid var(--border-inset-shadow);
+    border-left: 2px solid var(--border-inset-shadow);
+    border-right: 2px solid var(--border-inset-light);
+    border-bottom: 2px solid var(--border-inset-light);
+}

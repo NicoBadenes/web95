@@ -10,6 +10,7 @@ import { fs } from '../../filesystem/vfs.js';
 import { terminal } from '../apps/terminal.js';
 import { snakeGame } from '../apps/snake.js';
 import { calculator } from '../apps/calculator.js';
+import { browser } from '../apps/browser.js';
 
 class StartMenu {
     constructor() {
@@ -45,6 +46,18 @@ class StartMenu {
                 icon: '📝', label: 'Notepad',
                 action: () => {
                     desktop.openFileOrFolder('Untitled.txt', { type: 'file', content: ''});
+                }
+            },
+
+            {
+                icon: '🌐', label: 'Internet Explorer', // O "Netscape", o inventar un nombre proximamente
+                action: () => {
+                    wm.open({
+                        id: 'browser',
+                        title: 'Internet Explorer',
+                        w: 800, h: 600, // Tama;o de ventana grande
+                        content: browser.run()
+                    });
                 }
             },
 
