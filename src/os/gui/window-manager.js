@@ -1,6 +1,6 @@
 /**
  * @file src/os/gui/window-manager.js
- * @description v2.0 - Gestion de ventanas con Drag & Drop y Ssitema de foco (Z-Index).
+ * @description v2.2 - Gestion de ventanas con Drag & Drop, minimizar, max, y close, y Sitema de foco (Z-Index).
  */
 
 import { mk , $ } from '../../utils/dom.js';
@@ -20,14 +20,45 @@ class WindowManager{
     open(config) {
         const id = `win-${config.id || Date.now()}`;
 
-        //1. Boton Cerrar
-        const btnClose = mk('button', {
+        //1. Crear botones de control (min, max, close)
+
+        // A. Minimizar
+        const btnMin = mk('button', {
             className: 'btn-window',
+            text: '_',
+            attributes: { 'aria-label': 'Minimize', title: 'Minimize' },
+            events: {
+                click: (e) => {
+                    e.stopPropagation();
+                    this.toggleWindow(id);
+                }
+            }
+        });
+
+        // B. Maximizar
+        const btnMax = mk('button', {
+            className: 'btn-window',
+            text: '□',
+            attributes: { 'aria-label': 'Maximize', title: 'Maximize' },
+            events: {
+                click: (e) => {
+                    e.stopPropagation();
+                    this.toggleMaximize(windowNode);
+                }
+            }
+        });
+
+        // C. Cerrar
+        const btnClose = mk('button', {
+            // className: 'btn-window btn-close', --> Causa error
             text: 'X',
-            attributes: { 'aria-label': 'Close' },
+            attributes: { 
+                'class': 'btn-window btn-close', // --> Forma segura para remplazar la linea anterior comentada
+                'aria-label': 'Close',
+                title: 'Close'
+            },
             events:{
                 click: (e) => {
-                    //IMPORTANTE: stopPropagation evita que al cerrar se active el foco de la ventana
                     e.stopPropagation();
                     this.close(windowNode);
                 }
@@ -39,11 +70,14 @@ class WindowManager{
             className: 'window-title-bar',
             children: [
                 mk('span', { text: config.title, className: 'title-text' }),
-                mk('div', { className: 'window-controls', children: [btnClose] })
+                mk('div', { 
+                    className: 'window-controls', 
+                    children: [btnMin, btnMax, btnClose] })
             ],
             events: {
                 //Al hacer click en la barra, la ventana se corre al frente
-                mousedown: () => this.focus(windowNode)
+                mousedown: () => this.focus(windowNode),
+                dblclick: () => this.toggleMaximize(windowNode)
             }
         });
 
@@ -58,7 +92,6 @@ class WindowManager{
             id: id,
             className: 'window',
             attributes: {
-                //Posicion inicial dinamica (o por defecto 100,100)
                 style: `
                     width: ${config.w}px;
                     height: ${config.h}px;
@@ -73,6 +106,9 @@ class WindowManager{
         //Guardar referencia directa al titulo para cambiarle el color facilmente en el futuro
         windowNode._titleBar = titleBar;
 
+        // ESTADO INTERNO: Guardar dimensiones originales para restaurar al minimizar de vuelta
+        windowNode._restoreState = null;
+
         //5. Inyectar y activar logica
         this.desktopArea.appendChild(windowNode);
         this.windows.push(windowNode);
@@ -80,7 +116,7 @@ class WindowManager{
         //ACTIVAR FISICA
         this.makeDraggable(windowNode,titleBar);
 
-        // === Pasamos una funcion "CallBack" ===
+        // === Pasa la funcion "CallBack" ===
         taskbar.addTask(id, config.title, () => this.toggleWindow(id));
 
         //Darle foco inmediato a la nueva ventana
@@ -147,14 +183,48 @@ class WindowManager{
     }
 
     /**
+     * Logica de Maximiza / Restaurar
+     */
+    toggleMaximize(win){
+        if (win.classList.contains('maximized')){
+            // --- RESTAURAR ---
+            // Recupera las dimensiones guardadas
+            const state = win._restoreState;
+            if(state){
+                win.style.top = state.top;
+                win.style.left = state.left;
+                win.style.width = state.width;
+                win.style.height = state.height;
+            }
+            win.classList.remove('maximized');
+        } else{
+            // --- MAXIMIZAR ---
+            // 1. Guardar el estadoa ctual antes de romperlo
+            win._restoreState = {
+                top: win.style.top,
+                left: win.style.left,
+                width: win.style.width,
+                height: win.style.height
+            };
+
+            // 2. Aplicar pantalla completa (menos la barra de tareas)
+            win.style.top = '0px';
+            win.style.left = '0px';
+            win.style.width = '100%';
+            // Asumo q la taskbar mide unos 30px aprox (no tengo idea)
+            win.style.height = 'calc(100% - 30px)';
+
+            win.classList.add('maximized');
+            this.focus(win);
+        }
+    }
+
+    /**
      * MOTOR DE FISICA: Logica de Arrastrar y Soltar (Optimizado).
-     * @param {HTMLElement} element - La ventana completa.
-     * @param {HTMLElement} handle - La barra de titulo.
      */
     makeDraggable(element, handle) {   
         let startX, startY, initialLeft, initialTop;
 
-        // Funcion que se ejecuta al mover el mouse
         const onMouseMove = (e) => {
             e.preventDefault(); 
             const dx = e.clientX - startX;
@@ -174,7 +244,7 @@ class WindowManager{
 
         // INICIO del arrastre
         handle.addEventListener('mousedown', (e) => {
-            if (e.button !== 0) return; // Solo click izquierdo
+            if (e.button !== 0 || element.classList.contains('maximized')) return; // Solo click izquierdo
 
             startX = e.clientX;
             startY = e.clientY;
@@ -184,8 +254,6 @@ class WindowManager{
             initialTop = rect.top;
 
             document.body.style.cursor = 'move';
-
-            
 
             //
             window.addEventListener('mousemove', onMouseMove);

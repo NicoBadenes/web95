@@ -16,6 +16,11 @@
     flex-direction: column;
 }
 
+.window.maximized {
+    box-shadow: none;
+    border: none;
+}
+
 /* La barra de titulo azul */
 .window-title-bar {
     background-color: var(--clr-blue-dark);
@@ -59,15 +64,19 @@
     height: 14px;
     font-size: 10px;
     font-weight: bold;
-    line-height: 10px;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+
     background-color: var(--clr-silver);
     border: none;
 
-
     box-shadow:
         inset 1px 1px 0px var(--border-outset-light),
-        inset -1px -1px 0px var(--border-outset-dark);
+        inset -1px -1px 0px var(--border-outset-dark),
+        1px 1px 0px var(--clr-black);
 
     cursor: pointer;
 }
@@ -78,6 +87,11 @@
         inset 1px 1px 0px var(--border-inset-shadow),
         inset -1px -1px 0px var(--border-inset-light);
     padding-top: 1px;
+    padding-left: 1px;
+}
+
+.btn-close {
+    margin-left: 2px;
 }
 
 .window.minimized {
