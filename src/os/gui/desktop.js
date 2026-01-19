@@ -40,13 +40,25 @@ class Desktop{
         // Obtiene los hijos del nodo raiz
         const rootDir = fs.root.children;
 
+        // Ca;ci;p de grilla
+        let x = 10;
+        let y = 10;
+        const gapY = 85; // Espacio vertical entre iconos
+
         //Itera sobre cada archivo/carpeta
         Object.entries(rootDir).forEach(([name, node]) => {
-            this.createIcon(name, node);
+            this.createIcon(name, node, x, y);
+
+            // Calcular posicion del siguiente
+            y += gapY;
+            if (y > window.innerHeight - 100) { // Si se acaba el alto...
+                y = 10;
+                x += 80; // Salta a la siguiente columna
+            }
         });
     }
 
-    createIcon(name, node){
+    createIcon(name, node, x, y){
         // Determina el emoji segun el tipo (Placeholder temporal)
         const iconSymbol = node.type === 'dir' ? '📁' : '📄';
 
@@ -59,7 +71,10 @@ class Desktop{
         //3. Crear contenedor
         const iconNode = mk('div', {
             className: 'desktop-icon',
-            attributes: {'data-path': name}, //Guarda la ruta
+            attributes: {
+                'data-path': name,
+                style: `left: ${x}px; top: ${y}px;`
+            },
             children: [img, label],
             events: {
                 //Click Simple: Seleccionar
@@ -73,6 +88,7 @@ class Desktop{
                 }
             }
         });
+        this.makeDraggable(iconNode);
 
         this.iconsContainer.appendChild(iconNode);
     }
@@ -189,6 +205,43 @@ class Desktop{
             }
         }
     }
+
+    /**
+     * Habilita el arrastre del icono
+     */
+    makeDraggable(element) {
+        let isDragging = false;
+        let startX, startY, initialLeft, initialTop;
+
+        const onMouseMove = (e) => {
+            if (!isDragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            element.style.left = `${initialLeft + dx}px`;
+            element.style.top = `${initialTop + dy}px`;
+        }
+
+        const onMouseUp = () => {
+            isDragging = false;
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        };
+
+        element.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+
+            initialLeft = element.offsetLeft;
+            initialTop = element.offsetTop;
+
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+        });
+    }
+
 }
 
 
