@@ -6,10 +6,30 @@
 
 import { INITIAL_DISK } from "./disk.js";
 
+const STORAGE_KEY = 'web95_hdd_v1';
+
 class VirtualFileSystem {
     constructor() {
-        //Carga el disco en memoria (futuro posible localstoraga here)
-        this.root = JSON.parse(JSON.stringify(INITIAL_DISK));
+        // 1. Intenta cargar del LOcalStorage
+        const savedData = localStorage.getItem(STORAGE_KEY);
+
+        if (savedData) {
+            console.log('[VFS] Hard Drive loaded from storage.');
+            this.root = JSON.parse(savedData);
+        } else{
+            //2. Si no hay nada, carga la imagen de fabrica (disk.js)
+            //Usa JSON parse/stringfy para romper la referencia y hacer una copia limpia
+            console.log('[VFS] Formatting new disk...');
+            this.root = JSON.parse(JSON.stringify(INITIAL_DISK));
+            this.save();
+        }
+    }
+
+    /**
+     * Guarda el estado actual en el navegador
+     */
+    save() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.root));
     }
 
     /**
@@ -19,19 +39,18 @@ class VirtualFileSystem {
      */
 
     resolve(path){
-        //1. Normaliza la ruta
-        const parts = path.split('/').filter(p => p.length > 0);
+        //Si el path es vacio o '/', devuelve la raiz
+        if (path === '' || path === '/') return this.root;
 
+        const parts = path.split('/').filter(p => p.length > 0);
         let current = this.root;
 
-        //2. Recorre cada parte de la ruta
         for(const part of parts) {
             if (current.type !== 'dir' || !current.children[part]) {
-                return null; // Ruta invalida
+                return null;
             }
             current = current.children[part];
         }
-
         return current;
     }
 
@@ -43,14 +62,8 @@ class VirtualFileSystem {
 
     read(path) {
         const node = this.resolve(path);
-
-        if (!node) {
-            throw new Error(`File not found: ${path}`);
-        }
-        if(node.type !== 'file') {
-            throw new Error(`Path is a directory, not a file: ${path}`);
-        }
-
+        if (!node) throw new Error(`File not found: ${path}`);
+        if(node.type !== 'file') throw new Error(`Path is a directory: ${path}`);
         return node.content;
     }
 
@@ -60,66 +73,63 @@ class VirtualFileSystem {
      * @param {string} content
      */
     write(path,content) {
-        //1. Intentar resolver el archivo directamente
         let node = this.resolve(path);
 
-        //2. Si existe, actualizar su contenido
+        //A. Si existe, actualizar su contenido
         if (node){
             if (node.type !== 'file'){
                 throw new Error (`Cannot write to a directory: ${path}`);
             }
             node.content = content;
-            console.log(`[VFS] Updated file: ${path}`);
+            this.save();
             return;
         }
 
         // 3. Si NO existe, intenta crearlo
-        // Necesita encontrar la carpeta padre y el nombre del nuevo archivo
         const parts = path.split('/').filter(p => p.length > 0);
-        const fileName = parts.pop(); //Saca el ultimo pedazo (nombre)
+        const fileName = parts.pop();
 
-        // El resto del array 'parts' es la ruta de la caroeta padre
-        let parentDir = this.root; //Asume raiz por defecto
+        // Resuelve carpeta padre
+        // Si parts queda vacio, es que el padrees la raiz
+        let parentDir = parts.length === 0 ? this.root : this.resolve(parts.join('/'));
 
-        if(parts.length > 0) {
-            //Si hay carpetas intermedias, las resuelve
-            const parentPath = parts.join('/');
-            parentDir = this.resolve(parentPath);
-        }
-
-        // Valida que la carpeta padre exista
         if (!parentDir || parentDir.type !== 'dir'){
             throw new Error(`Directory path not found: ${parts.join('/')}`);
         }
 
-        //4. Crear el archivo nuevo en el disco
+        // Crea archivo (conservando metadata vacia por si acaso)
         parentDir.children[fileName] = {
             type: 'file',
-            content: content
+            content: content,
+            meta: {}
         };
 
-        console.log(`[VFS] Created new file: ${path}`);
+        console.log(`[VFS] Created: ${path}`);
+        this.save();
+    }
+
+    dir (path = '') {
+        const node = path === '' ? this.root : this.resolve(path);
+        if (!node || node.type !== 'dir') throw new Error (`Invalid directory: ${path}`);
+        return Object.keys(node.children);
     }
 
     /**
-     * Lista los archivos de una carpeta.
-     * @param {string} path
-     * @param {string[]} Array con nombres de archivos.
+     * Actualiza metadatos (como la posocion X, Y en el escritorio)
+     * sin tocar el contenido del archivo.
      */
+    updateMeta(path, newMeta) {
+        const node = this.resolve(path);
+        if (node) {
+            // Inicializa meta si no existe
+            if (!node.meta) node.meta = {};
 
-    dir (path = ''){
-        const node = path === '' ? this.root : this.resolve(path);
+            // Fusiona los datos nuevos
+            Object.assign(node.meta, newMeta);
 
-        if (!node){
-            throw new Error(`Directory not found: ${path}`);
+            this.save();
         }
-        if (node.type !== 'dir') {
-            throw new Error(`Path is not a directory: ${path}`);
-        }
-
-        return Object.keys(node.children);
     }
 }
 
-// Instancia unica (singleton)
 export const fs = new VirtualFileSystem();

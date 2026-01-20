@@ -41,26 +41,35 @@ class Desktop{
      * Dibuja los iconos basados en los archivos de la raiz (C:/)
      */
     render(){
-        // Limpia por las dudas
         this.iconsContainer.innerHTML = '';
-
-        // Obtiene los hijos del nodo raiz
         const rootDir = fs.root.children;
 
-        // Inicia con el margen exacto
-        let x = this.MARGIN_X;
-        let y = this.MARGIN_Y;
+        // Variables para la grilla automatica (solo si NO hay posicion guardada)
+        let autoX = this.MARGIN_X;
+        let autoY = this.MARGIN_Y;
 
-        //Itera sobre cada archivo/carpeta
         Object.entries(rootDir).forEach(([name, node]) => {
-            this.createIcon(name, node, x, y);
+            let finalX, finalY;
 
-            // Calcular posicion del siguiente
-            y += this.GRID_H;
-            if (y + this.GRID_H > window.innerHeight) { // Si se acaba el alto...
-                y = this.MARGIN_Y; //Volver arriba
-                x += this.GRID_W; // Salta a la siguiente columna
+            // --- LOGICA DE PERSISTENCIA ---
+            if (node.meta && node.meta.pos) {
+                //Si ya tiene posicion guardada, q la use
+                finalX = node.meta.pos.x;
+                finalY = node.meta.pos.y;
+            } else {
+                // Si es nuevo, usa la grilla automatica
+                finalX = autoX;
+                finalY = autoY;
+
+                //Avanzar grilla solo para los nuevos
+                autoY += this.GRID_H;
+                if (autoY + this.GRID_H > window.innerHeight) {
+                    autoY = this.MARGIN_Y;
+                    autoX += this.GRID_W;
+                }
             }
+
+            this.createIcon(name, node, finalX, finalY);
         });
     }
 
@@ -203,43 +212,47 @@ class Desktop{
             isDragging = false;
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
-        
-            //1. Definir tamaño de la celda (Debe coincidir aprox con el render inicial)
-            const rawLeft = parseInt(element.style.left) || 0; 
+
+            //1. Calcular grilla
+            const rawLeft = parseInt(element.style.left) || 0;
             const rawTop = parseInt(element.style.top) || 0;
 
-            // Formula: (Posicion - Marge) / TamañoCelda
             let col = Math.round((rawLeft - this.MARGIN_X) / this.GRID_W);
             let row = Math.round((rawTop - this.MARGIN_Y) / this.GRID_H);
 
-            // Evitar indices negativos
-            if (col < 0) col = 0;
-            if (row < 0) row = 0;
+            if(col < 0) col = 0;
+            if(row < 0) row = 0;
 
-            //2. Obtener posicion final cruda (Snap)
             let snapLeft = this.MARGIN_X + (col * this.GRID_W);
             let snapTop = this.MARGIN_Y + (row * this.GRID_H);
 
-            //3. Limites de pantalla (Derecha y Abajo)
+            // 2. Limites
             const maxLeft = window.innerWidth - this.GRID_W;
             const maxTop = window.innerHeight - 40 - this.GRID_H;
 
             if (snapLeft > maxLeft) snapLeft = this.MARGIN_X + (Math.floor((maxLeft - this.MARGIN_X) / this.GRID_W) * this.GRID_W);
             if (snapTop > maxTop) snapTop = this.MARGIN_Y + (Math.floor((maxTop - this.MARGIN_Y) / this.GRID_H) * this.GRID_H);
-
-
-            //4. Deteccion de colisiones
-            // Si el lugar esta ocupado, REBOTA a la posicion original (initialLeft/Top)
+        
+            // 3. Colisiones
             if (this.isSlotOccupied(snapLeft, snapTop, element)) {
-                console.log("Slot occupied! Bouncing back."); // Debug
+                console.log("Bouncing by colission");
                 snapLeft = initialLeft;
                 snapTop = initialTop;
-            }
+            }    
 
-            // 5. Aplicar
+            //4. Aplicar visualmente
             element.style.transition = 'top 0.2s, left 0.2s';
             element.style.left = `${snapLeft}px`;
             element.style.top = `${snapTop}px`;
+
+            //5. Guardar en disco duro
+            const filename = element.getAttribute('data-path');
+
+            // Llama a la nueva funcion de VFS
+            fs.updateMeta(filename, {
+                pos: { x: snapLeft, y: snapTop}
+            });
+            // ===============================
 
             setTimeout(() => { element.style.transition = 'none';}, 200);
             element.style.zIndex = '';
