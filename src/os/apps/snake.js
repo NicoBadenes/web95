@@ -6,6 +6,57 @@
 import { mk } from '../../utils/dom.js';
 import { fs } from '../../filesystem/vfs.js';
 
+// -- Sintetizador de audio retro (8-bit) ---
+class SnakeAudio {
+    constructor() {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+        this.enabled = true;
+    }
+
+    playTone(frequency, type, duration, slideTo = null) {
+        if (!this.enabled) return;
+        // Reactivar contexto si el navegador lo suspendio
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = type; // 'square' (Gameboy), 'sawtooth' (NES), 'triangle'
+        osc.frequency.setValueAtTime(frequency, this.ctx.currentTime);
+
+        // Efecto "Slide" (Glissando): El tono baja o sube mientras suena
+        if (slideTo) {
+            osc.frequency.exponentialRampToValueAtTime(slideTo, this.ctx.currentTime + duration);   
+        }
+
+        // Volumen: Empieza en 0.05 y baja a 0.01 (Fade out corto)
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    }
+
+    // SONIDO 1: Comer (Tipo "Coin" - Doble tono agudo)
+    eat() {
+        this.playTone(600, 'square', 0.1);
+        setTimeout(() => this.playTone(1200, 'square', 0.2), 60);
+    }
+
+    // SONIDO 2: GAME OVER (Bajada triste)
+    die() {
+        this.playTone(200, 'sawtooth', 0.6, 10); //Baka de 200Hz a 10Hz
+    }
+
+    // SONIDO 3: Giro (Click suave)
+    turn() {
+        this.playTone(800, 'square', 0.03);
+    }
+}
 export class SnakeGame {
     constructor() {
         // Configuracion
@@ -39,6 +90,9 @@ export class SnakeGame {
         // --- GAME JUICE ---
         this.particles = [];
         this.shakeTime = 0;
+
+        // --- CHIP DE AUDIO ---
+        this.audio = new SnakeAudio();
     }
 
     // --- EFECTOS VISUALES ---
@@ -223,6 +277,8 @@ export class SnakeGame {
             // Explosion
             this.createExplosion(this.food.x, this.food.y, '#CC0000');
 
+            this.audio.eat();
+
             this.placeFood()
 
             // Aumentar velocidad cada 50 puntos
@@ -310,16 +366,28 @@ export class SnakeGame {
         // Controles de Direccion (Evitar giros de 100 grados)
         switch(e.key) {
             case 'ArrowUp':
-                if (this.direction.y === 0) this.nextDirection = { x: 0, y: -1 };
+                if (this.direction.y === 0){
+                    this.nextDirection = { x: 0, y: -1 };
+                    this.audio.turn();
+                } 
                 break;
             case 'ArrowDown':
-                if (this.direction.y === 0) this.nextDirection = { x: 0, y: 1};
+                if (this.direction.y === 0) {
+                    this.nextDirection = { x: 0, y: 1};
+                    this.audio.turn();
+                } 
                 break;
             case 'ArrowLeft':
-                if (this.direction.x === 0) this.nextDirection = { x: -1, y: 0};
+                if (this.direction.x === 0){
+                    this.nextDirection = { x: -1, y: 0};
+                    this.audio.turn();
+                } 
                 break;
             case 'ArrowRight':
-                if (this.direction.x === 0) this.nextDirection = { x: 1, y: 0};
+                if (this.direction.x === 0){
+                    this.nextDirection = { x: 1, y: 0};
+                    this.audio.turn();
+                } 
                 break;
         }
     }
@@ -362,6 +430,7 @@ export class SnakeGame {
 
     gameOver() {
         this.startShake(10);
+        this.audio.die();
         this.isPlaying = false;
         this.isGameOver = true;
 

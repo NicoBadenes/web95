@@ -81,7 +81,8 @@ class StartMenu {
                         id: 'snake',
                         title: 'Snake',
                         w: 440, h: 520,
-                        content: snakeGame.run()
+                        content: snakeGame.run(),
+                        fixedSize: true
                     });
                 }
             },
