@@ -35,6 +35,51 @@ export class SnakeGame {
         this.isGameOver = false;
         this.isPaused = false;
         this.isPlaying = false;
+
+        // --- GAME JUICE ---
+        this.particles = [];
+        this.shakeTime = 0;
+    }
+
+    // --- EFECTOS VISUALES ---
+
+    createExplosion(gridX, gridY, color) {
+        //Convierte coordenadas de grilla a pixeles para centrar la explosion
+        const pixelX = (gridX * this.TILE_SIZE) + (this.TILE_SIZE / 2);
+        const pixelY = (gridY * this.TILE_SIZE) + (this.TILE_SIZE / 2);
+
+        // Crea 10 particulas
+        for (let i = 0; i < 12; i++) {
+            this.particles.push({
+                x: pixelX,
+                y: pixelY,
+                //Velocidad aleatoria en X e Y
+                vx: (Math.random() - 0.5) * 12,
+                vy: (Math.random() - 0.5) * 12,
+                life: 1.0, // Vida del 100%
+                color: color
+            });
+        }
+    }
+
+    startShake(duration) {
+        this.shakeTime = duration;
+    }
+
+    updateParticles() {
+        // Recorre el array al reves para poder borrar elementos sin romper el loop
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.20; // Se desvanecen un 5% cada frame
+
+            // Si se apago, se borra
+            if (p.life <= 0) {
+                this.particles.splice(i, 1);
+            }
+        }
     }
 
     /**
@@ -102,7 +147,9 @@ export class SnakeGame {
      * Bucle principal del juego (Game Loop)
      */
     gameLoop(currentTime) {
-        if (!this.isPlaying || this.isPaused) return;
+        // Solo se detiene el loop si es pausa
+        // Si es GAME OVER, sigue dibujando para ver los efectos.
+        if (this.isPaused) return;
 
         this.gameLoopId = requestAnimationFrame((t) => this.gameLoop(t));
 
@@ -110,7 +157,16 @@ export class SnakeGame {
         if (secondsSinceLastRender < this.speed / 1000) return;
 
         this.lastRenderTime = currentTime;
-        this.update();
+
+        // 1. Logica de juego (Solo si esta vivo)
+        if (this.isPlaying && !this.isGameOver) {
+            this.update();
+        }
+
+        // 2. Logica visual (Siempre corre, incluso en Game Over)
+        this.updateParticles();
+
+        // 3. Dibujar todo
         this.draw();
     }
 
@@ -121,6 +177,12 @@ export class SnakeGame {
         this.nextDirection = { x: 0, y: -1};
         this.score = 0;
         this.speed = 150;
+
+        // Limpieza visual
+        this.shakeTime = 0;
+        this.particles = [];
+
+
         this.isGameOver = false;
         this.isPaused = false;
         this.isPlaying = true;
@@ -157,7 +219,11 @@ export class SnakeGame {
         if (head.x === this.food.x && head.y === this.food.y) {
             this.score += 10;
             this.updateScore(this.score);
-            this.placeFood();
+
+            // Explosion
+            this.createExplosion(this.food.x, this.food.y, '#CC0000');
+
+            this.placeFood()
 
             // Aumentar velocidad cada 50 puntos
             if (this.score % 50 === 0 && this.speed > 50) {
@@ -170,12 +236,24 @@ export class SnakeGame {
     }
 
     draw() {
-        // Limpiar pantalla
-        this.ctx.fillStyle = '#9bbc0f'; // Color LCD fondo
+        // 1. Guardar el estado actual del canvas (para poder rotarlo/moverlo) 
+        this.ctx.save();
+
+        // 2. Aplicar shake
+        if (this.shakeTime > 0) {
+            const magnitude = 8;
+            const dx = (Math.random() - 0.5) * magnitude;
+            const dy = (Math.random() - 0.5) * magnitude;
+            this.ctx.translate(dx, dy);
+            this.shakeTime--;
+        }
+
+        // 3. Fondo
+        this.ctx.fillStyle = '#9bbc0f';
         this.ctx.fillRect(0, 0, this.WIDTH, this.HEIGHT);
 
-        // Dibujar Comida
-        this.ctx.fillStyle = '#cc0000';
+        // 4. Dibujar Comida
+        this.ctx.fillStyle = '#CC0000';
         this.ctx.fillRect(
             this.food.x * this.TILE_SIZE + 2,
             this.food.y * this.TILE_SIZE + 2,
@@ -183,11 +261,9 @@ export class SnakeGame {
             this.TILE_SIZE - 4
         );
 
-        // Dibujar Serpiente
+        // 5. Dibujar Serpiente
         this.snake.forEach((segment, index) => {
-            // Cabeza mas oscura, cuerpo un pooc mas claro (simulado)
             this.ctx.fillStyle = index === 0 ? '#000' : '#306230';
-
             this.ctx.fillRect(
                 segment.x * this.TILE_SIZE + 1,
                 segment.y * this.TILE_SIZE + 1,
@@ -195,6 +271,18 @@ export class SnakeGame {
                 this.TILE_SIZE - 2
             );
         });
+
+        // 6. Dibujar particulas
+        this.particles.forEach(p => {
+            // gloablAlpha para que se vuelvan transparentes
+            this.ctx.globalAlpha = p.life;
+            this.ctx.fillStyle = p.color;
+            this.ctx.fillRect(p.x, p.y, 4, 4);
+        });
+
+        // Restaurar opacidad y posicion de camara
+        this.ctx.globalAlpha = 1.0;
+        this.ctx.restore();
     }
 
     handleInput(e) {
@@ -273,9 +361,9 @@ export class SnakeGame {
     }
 
     gameOver() {
+        this.startShake(10);
         this.isPlaying = false;
         this.isGameOver = true;
-        cancelAnimationFrame(this.gameLoopId);
 
         // Guardar HighScore
         if (this.score > this.highScore) {
