@@ -1,0 +1,67 @@
+/* EXPLORER.CSS */
+.app-explorer {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--clr-silver);
+}
+
+/* Barra de herramientas */
+.explorer-toolbar{
+    display: flex;
+    gap: 5px;
+    padding: 5px;
+    border-bottom: 2px solid var(--border-outset-dark);
+    background-color: var(--clr-silver);
+    align-items: center;
+}
+
+/* Area blanca donde estan los iconos */
+.explorer-content {
+    flex-grow: 1;
+    background-color: white;
+    border: 2px inset var(--border-inset-light);
+    margin: 2px;
+    padding: 10px;
+
+    /* CSS Grid para ordenar los iconos automaticamente en filas */
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    grid-auto-rows: 90px;
+    gap: 10px;
+    overflow-y: auto;
+}
+
+/* Estilo de icono DENTRO de la ventana (ligeralmente distinito al del escritorio) */
+.explorer-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    cursor: default;
+    border: 1px solid transparent;
+    padding: 2px;
+}
+
+.explorer-icon:hover {
+    background-color: rgba(0, 0, 255, 0.1);
+}
+
+.explorer-icon.selected {
+    background-color: var(--clr-blue-dark);
+    color: white;
+}
+
+.explorer-icon.selected .icon-label{
+    color: white;
+}
+
+.explorer-icon .icon-label{
+    font-size: 11px;
+    text-align: center;
+    color: black;
+    margin-top: 2px;
+    word-break: break-word;
+    max-height: 32px; /* Limite de altura para nombres largos */
+    overflow: hidden;
+}

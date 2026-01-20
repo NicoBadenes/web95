@@ -8,6 +8,7 @@ import { fs } from '../../filesystem/vfs.js';
 import { wm } from './window-manager.js'
 import { notepad } from '../apps/notepad.js';
 import { imageViewer } from '../apps/image-viewer.js';
+import { ExplorerApp } from '../apps/explorer.js';
 
 class Desktop{
     constructor() {
@@ -117,65 +118,18 @@ class Desktop{
 
     openFileOrFolder(name, node){
         if (node.type === 'dir'){
-            //POR AHORA: abre una ventana mostrando la lista de archivos (simulando un explorador de archivos)
-            
-            //1. Obtiene la lista de nombres de archivos
-            const files = fs.dir(name);
+            // --- ExplorerApp ---
 
-            //2. Crea un contenedor para la lista
-            const listContainer = mk('div', {
-                attributes: { style: 'padding: 5px; background-color: white; height: 100%;'}
-            });
+            //Calcula ruta absoluta.
+            // Si venia del desktop, se asume que esta en 'root' + nombre carpeta
+            // (Si implemento sub-carpetas en el futuro, esto es mejorable)
+            const explorer = new ExplorerApp(name);
 
-            //3. Genera un elemento clickeable por cada archivo
-            files.forEach(fileName => {
-                const item = mk('div', {
-                    text: fileName,
-                    attributes: {
-                        //Estilos para que parezca un item seleccionable
-                        style: 'cursor: pointer; padding: 2px 5px; margin-bottom: 2px;'
-                    },
-                    events: {
-                        //Efecto Hover simple
-                        mouseenter: (e) => {
-                            e.target.style.backgroundColor = 'var(--clr-blue-dark)';
-                            e.target.style.color = 'white';
-                        },
-                        mouseleave: (e) => {
-                            e.target.style.backgroundColor = 'transparent';
-                            e.target.style.color = 'black';
-                        },
-                        //DOBLE CLICK
-                        dblclick: () => {
-                            //Calcula la ruta completa
-                            //Si 'name' ya contiene una ruta, esto funciona igual
-                            const fullPath = `${name}/${fileName}`;
-
-                            // Busca el nodo real de ese archivo
-                            const childNode = fs.resolve(fullPath);
-
-                            if(childNode){
-                                this.openFileOrFolder(fullPath, childNode);
-                            }
-                        }
-                    }
-                });
-
-                listContainer.appendChild(item);
-            });
-
-            // Si la carpeta esta vacia
-            if (files.length === 0) {
-                listContainer.innerText = '(Empty folder)';
-                listContainer.style.color = 'gray';
-            }
-
-            //4. Abre la ventana con la lista interactiva
             wm.open({
                 id: `dir-${name}`,
                 title: name,
-                w: 300, h: 200,
-                content: listContainer
+                w: 400, h: 300,
+                content: explorer.run()
             });
 
         }else {
