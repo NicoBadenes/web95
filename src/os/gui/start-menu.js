@@ -80,7 +80,7 @@ class StartMenu {
                     wm.open({
                         id: 'snake',
                         title: 'Snake',
-                        w: 420, h: 460,
+                        w: 440, h: 520,
                         content: snakeGame.run()
                     });
                 }
