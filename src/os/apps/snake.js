@@ -56,6 +56,14 @@ class SnakeAudio {
     turn() {
         this.playTone(800, 'square', 0.03);
     }
+
+    // SONIDO 4: LEVEL UP (Arpegio ascendente)
+    levelUp() {
+        this.playTone(400, 'square', 0.1);
+        setTimeout(() => this.playTone(600, 'square', 0.1), 100);
+        setTimeout(() => this.playTone(800, 'square', 0.1), 200);
+        setTimeout(() => this.playTone(1200, 'square', 0.2), 300);
+    }
 }
 export class SnakeGame {
     constructor() {
@@ -90,6 +98,11 @@ export class SnakeGame {
         // --- GAME JUICE ---
         this.particles = [];
         this.shakeTime = 0;
+
+        // --- SISTEMA DE NIVELES ---
+        this.level = 1;
+        this.obstacles = []; // Array de {x, y} para los muros
+        this.bgColor = '#9bbc0f'; //Color inicial
 
         // --- CHIP DE AUDIO ---
         this.audio = new SnakeAudio();
@@ -133,6 +146,83 @@ export class SnakeGame {
             if (p.life <= 0) {
                 this.particles.splice(i, 1);
             }
+        }
+    }
+
+    generateLevel(level){
+        this.obstacles = [];
+        this.level = level;
+
+        // Define mapas segun el nivel
+        switch(level) {
+            case 1:
+                this.bgColor = '#9bbc0f';
+                break;
+
+            case 2:
+                this.bgColor = '#8bac0f'; // Un toque mas oscuro
+                this.audio.levelUp();
+                // Muro horizontal en el centro
+                for(let x = 6; x < 14; x ++) {
+                    this.obstacles.push({ x: x, y: 10 });
+                }
+                break;
+
+            case 3:
+                this.bgColor = '#a8b070';
+                this.audio.levelUp();
+                // Cuatro bloques en las esquinas
+                // Bloque 1
+                this.obstacles.push({x:3, y:3}, {x:4, y:3}, {x:3, y:4}, {x:4, y:4});
+                // Bloque 2
+                this.obstacles.push({x:16, y:3}, {x:17, y:3}, {x:16, y:4}, {x:17, y:4});
+                // Bloque 3
+                this.obstacles.push({x:3, y:16}, {x:4, y:16}, {x:3, y:17}, {x:4, y:17});
+                // Bloque 4
+                this.obstacles.push({x:16, y:16}, {x:17, y:16}, {x:16, y:17}, {x:17, y:17});
+                break;
+            
+            default:
+                // Nivel 4 en adelante: Generacion aleatoria (Caos)
+                this.bgColor = '#889977';
+                this.audio.levelUp();
+
+                // Cabeza actual de referencia
+                const head = this.snake[0];
+
+                // Generar muros al azar pero con seguridad
+                let count = 0;
+                let attempts = 0;
+                const target = 10 + level; //Cantidad de muros
+
+                while (count < target && attempts < 200) {
+                    const obs = {
+                        x: Math.floor(Math.random() * this.COLS),
+                        y: Math.floor(Math.random() * this.ROWS)
+                    };
+
+                    //1. Verificar "Zona segura" 5x5 alrededor de la cabeza
+                    // (Si la diferencia en X o Y es menor a 2, esta muy cerca)
+                    const tooCloseX = Math.abs(obs.x - head.x) <= 2;
+                    const tooCLoseY = Math.abs(obs.y - head.y) <= 2;
+                    const inSafeZone = tooCloseX && tooCLoseY;
+
+                    // 2. Verificar que no caiga sobre el cuerpo de la serpiente
+                    const onSnake = this.snake.some(s => s.x === obs.x && s.y === obs.y);
+
+                    // 3. Verificar que no haya otro muro ahi ya
+                    const isDuplicate = this.obstacles.some(o => o.x === obs.x && o.y === obs.y);
+
+                    // Si pasa todas las pruebas, se agrega
+                    if (!inSafeZone && !onSnake && !isDuplicate) {
+                        this.obstacles.push(obs);
+                        count ++;
+                    }
+
+                    attempts++;
+                }
+                
+                break;
         }
     }
 
@@ -232,6 +322,9 @@ export class SnakeGame {
         this.score = 0;
         this.speed = 150;
 
+        // Iniciar Nivel 1
+        this.generateLevel(1);
+
         // Limpieza visual
         this.shakeTime = 0;
         this.particles = [];
@@ -279,12 +372,25 @@ export class SnakeGame {
 
             this.audio.eat();
 
-            this.placeFood()
+            // Logica de niveles
 
-            // Aumentar velocidad cada 50 puntos
-            if (this.score % 50 === 0 && this.speed > 50) {
-                this.speed -= 10;
+            // 1. Niveles normales (1, 2, 3): Cambian cada 100 puntos (100, 200, 300)
+            const isNormalLevelUp = this.score <= 300 && this.score % 100 === 0;
+
+            // 2. Modo Experto (Nivel 4+): Cambia cada 200 puntos (500, 700, 900...)
+            //(score % 200 === 100) detecta los hitos impares: 300, 500, 700...
+            const isExpertRefresh = this.score > 300 && this.score % 200 === 100;
+
+            if (isNormalLevelUp || isExpertRefresh) {
+                this.generateLevel(this.level + 1);
             }
+
+            // Aumentar velocidad siempre por debajo del nivel 4.
+            if (this.level < 4 && this.score % 50 === 0) {
+                if (this.speed > 70) this.speed -= 10;
+            }
+            
+            this.placeFood()
         } else{
             // Si no comio, quitar la cola (movimiento normal)
             this.snake.pop();
@@ -307,6 +413,21 @@ export class SnakeGame {
         // 3. Fondo
         this.ctx.fillStyle = '#9bbc0f';
         this.ctx.fillRect(0, 0, this.WIDTH, this.HEIGHT);
+
+        // DIBUJAR MUROS
+        this.ctx.fillStyle = '#2d4d2d';
+        this.obstacles.forEach(obs => {
+            this.ctx.fillRect(
+                obs.x * this.TILE_SIZE,
+                obs.y * this.TILE_SIZE,
+                this.TILE_SIZE,
+                this.TILE_SIZE
+            );
+            // Un poco de brillo para darle toque 3D
+            this.ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            this.ctx.fillRect(obs.x * this.TILE_SIZE + 2, obs.y * this.TILE_SIZE + 2, this.TILE_SIZE - 4, this.TILE_SIZE -4);
+            this.ctx.fillStyle = '#2d4d2d'; // Reset color
+        })
 
         // 4. Dibujar Comida
         this.ctx.fillStyle = '#CC0000';
@@ -402,8 +523,15 @@ export class SnakeGame {
                 y: Math.floor(Math.random() * this.ROWS)
             };
 
-            // Verificar que no caiga sobre la serpiente
-            valid = !this.snake.some(s => s.x === this.food.x && s.y === this.food.y);
+            // 1. Chequea serpiente
+            const onSnake = this.snake.some( s => s.x === this.food.x && s.y === this.food.y);
+
+            // 2. Chequea muros
+            const onWall = this.obstacles.some(o => o.x ===  this.food.x && o.y === this.food.y);
+
+            // 3. Combinar Ambas
+            valid = !onSnake && !onWall;
+            
             attempts++;
         }
 
@@ -425,6 +553,13 @@ export class SnakeGame {
                 return true;
             }
         }
+
+        // 3. Obstaculos
+        // Si la cabeza choca con algun muro del array
+        if (this.obstacles.some(obs => obs.x === head.x && obs.y === head.y)) {
+            return true;
+        }
+
         return false;
     }
 
