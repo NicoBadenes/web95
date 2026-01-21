@@ -1,6 +1,6 @@
 /**
  * @file src/os/gui/desktop.js
- * @description Gestiona los iconos del escritorio y sus interacciones.
+ * @description Gestiona iconos con algoritmo "Smart Grid" para vitar superposiciones.
  */
 
 import { mk, $} from '../../utils/dom.js';
@@ -44,33 +44,65 @@ class Desktop{
         this.iconsContainer.innerHTML = '';
         const rootDir = fs.root.children;
 
-        // Variables para la grilla automatica (solo si NO hay posicion guardada)
-        let autoX = this.MARGIN_X;
-        let autoY = this.MARGIN_Y;
+        // 1. Mapa de ocupacion
+        // Guarda las coordenadas ocupadas para no poner nada encima.
+        const occupiedSlots = new Set();
+        
+        Object.values(rootDir).forEach(node => {
+            if (node.meta && node.meta.pos) {
+                // "Snap" a la grilla para asegurar consistencia
+                const col = Math.round((node.meta.pos.x - this.MARGIN_X) / this.GRID_W);
+                const row = Math.round((node.meta.pos.y - this.MARGIN_Y) / this.GRID_H);
+                occupiedSlots.add(`${col},${row}`);
+            }
+        });
 
+        // 2. Renderizado
         Object.entries(rootDir).forEach(([name, node]) => {
             let finalX, finalY;
-
-            // --- LOGICA DE PERSISTENCIA ---
-            if (node.meta && node.meta.pos) {
-                //Si ya tiene posicion guardada, q la use
+            
+            if(node.meta && node.meta.pos) {
+                // A. Tiene posicion guardada: Usarla
                 finalX = node.meta.pos.x;
                 finalY = node.meta.pos.y;
-            } else {
-                // Si es nuevo, usa la grilla automatica
-                finalX = autoX;
-                finalY = autoY;
+            } else{
+                // B. Es nuevo: Buscar el primer slot libre
+                const freePos = this.findFirstFreeSlot(occupiedSlots);
 
-                //Avanzar grilla solo para los nuevos
-                autoY += this.GRID_H;
-                if (autoY + this.GRID_H > window.innerHeight) {
-                    autoY = this.MARGIN_Y;
-                    autoX += this.GRID_W;
-                }
+                // Convertir Col/Row a Pixeles
+                finalX = this.MARGIN_X + (freePos.col * this.GRID_W);
+                finalY = this.MARGIN_Y + (freePos.row * this.GRID_H);
+
+                // Guarda esta nueva posicion en el VFS inmediatamente
+                // para que la proxima vez ya sea "fija".
+                fs.updateMeta(name, { pos: { x: finalX, y: finalY } });
+
+                // Marcar este slot como ocupado para el siguiente archivo del loop actual
+                occupiedSlots.add(`${freePos.col},${freePos.row}`);
             }
 
             this.createIcon(name, node, finalX, finalY);
         });
+    }
+
+    /**
+     * Busca la primera celda (Columna, Fila) que no esta en el Set de ocupados.
+     */
+    findFirstFreeSlot(occupiedSlots) {
+        // Limites de pantalla (aproximados)
+        const maxCols = Math.floor((window.innerWidth - this.MARGIN_X) / this.GRID_W);
+        const maxRows = Math.floor((window.innerHeight - 40 - this.MARGIN_Y) / this.GRID_H);
+
+        for (let col = 0; col < maxCols; col ++) {
+            for (let row = 0; row < maxRows; row++) {
+                const key = `${col},${row}`;
+                if (!occupiedSlots.has(key)) {
+                    return { col, row};
+                }
+            }
+        }
+        // Si todo esta lleno, apilar en el 0,0 (fallback)
+        return { col: 0, row: 0};
     }
 
     createIcon(name, node, x, y){
