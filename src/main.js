@@ -6,6 +6,7 @@ import { initBootSequence } from "./kernel/boot.js";
 import { taskbar } from './os/gui/taskbar.js';
 import { desktop } from "./os/gui/desktop.js";
 import { startMenu } from "./os/gui/start-menu.js";
+import { contextMenu } from './os/gui/context-menu.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Iniciar secuencia de arranque
@@ -15,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
             taskbar.init();
             desktop.init();
             startMenu.init();
+            contextMenu.init();
 
             //2. Conectar el boton start con el menu
             taskbar.onStartClick(() => {

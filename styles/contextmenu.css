@@ -1,0 +1,45 @@
+/* Context menu style */
+.context-menu {
+    position: absolute;
+    min-width: 150px;
+    background-color: var(--clr-silver);
+    border: 2px solid;
+    border-color: var(--border-outset-light) var(--border-outset-dark) var(--border-outset-dark) var(--border-outset-light);
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+    z-index: 99999; 
+
+    display: flex;
+    flex-direction: column;
+    padding: 2px;
+}
+
+.context-item{
+    padding: 4px 10px;
+    cursor: default;
+    font-size: 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.context-item:hover{
+    background-color: var(--clr-blue-dark);
+    color: var(--clr-white);
+}
+
+.context-separator{
+    height: 1px;
+    background-color: var(--clr-gray);
+    border-bottom: 1px solid var(--clr-white);
+    margin: 3px 2px;
+}
+
+/* Deshabilitado */
+.context-item.disabled{
+    color: var(--clr-gray);
+}
+
+.context-item.disabled:hover{
+    background-color: transparent;
+    color: var(--clr-gray);
+}
+

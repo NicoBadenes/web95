@@ -204,8 +204,8 @@ export class SnakeGame {
                     //1. Verificar "Zona segura" 5x5 alrededor de la cabeza
                     // (Si la diferencia en X o Y es menor a 2, esta muy cerca)
                     const tooCloseX = Math.abs(obs.x - head.x) <= 2;
-                    const tooCLoseY = Math.abs(obs.y - head.y) <= 2;
-                    const inSafeZone = tooCloseX && tooCLoseY;
+                    const tooCloseY = Math.abs(obs.y - head.y) <= 2;
+                    const inSafeZone = tooCloseX && tooCloseY;
 
                     // 2. Verificar que no caiga sobre el cuerpo de la serpiente
                     const onSnake = this.snake.some(s => s.x === obs.x && s.y === obs.y);
