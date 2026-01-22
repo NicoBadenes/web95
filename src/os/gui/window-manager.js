@@ -121,6 +121,19 @@ class WindowManager{
         // ESTADO INTERNO: Guardar dimensiones originales para restaurar al minimizar de vuelta
         windowNode._restoreState = null;
 
+        // Inyectar handles de redimensionado
+        if (!isFixed) {
+            const dirs = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
+            dirs.forEach(dir => {
+                const handle = mk('div', {
+                    className: ['resize-handle', `handle-${dir}`]
+                });
+                // Conectar logica
+                this.makeResizable(windowNode, handle, dir);
+                windowNode.appendChild(handle);
+            });
+        }
+
         //5. Inyectar y activar logica
         this.desktopArea.appendChild(windowNode);
         this.windows.push(windowNode);
@@ -268,6 +281,99 @@ class WindowManager{
             document.body.style.cursor = 'move';
 
             //
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+        });
+    }
+
+    /**
+     * Logica de redimensionado
+     * @param {HTMLElement} node
+     * @param {HTMLElement} handle
+     * @param {string} dir
+     */
+    makeResizable(node, handle, dir) {
+        let startX, startY, startW, startH, startLeft, startTop;
+
+        const onMouseMove = (e) => {
+            e.preventDefault();
+
+            // Cuanto se movio el mouse
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            // Variables finales calculadas
+            let newW = startW;
+            let newH = startH;
+            let newLeft = startLeft;
+            let newTop = startTop;
+
+            // 1. Calcular cambios segun direccion
+            // Este (derecha) -> Solo cambia ancho
+            if (dir.includes('e')) {
+                newW = startW + dx;
+            }
+            // Oeste (Izquierda) -> Cambia acnho Y posicion (el borde izq se mueve)
+            if (dir.includes('w')) {
+                newW = startW - dx;
+                newLeft = startLeft + dx
+            }
+            // Sur (Abajo) -> Solo cambia alto
+            if (dir.includes('s')) {
+                newH = startH + dy;
+            }
+            // Norte (Arriba) -> Cambia alto y posicion Top
+            if (dir.includes('n')) {
+                newH = startH - dy;
+                newTop = startTop + dy;
+            }
+
+            // 2. Aplicar restricciones (Min Width/Height)
+            // Si el nuevo acnho es menor al minimo, se bloquea
+            if (newW < this.MIN_WIDTH) {
+                newW = this.MIN_WIDTH;
+                // Si esta en modo OESTE, hay que corregir el Left para q deje de  moverse
+                if (dir.includes('w')) {
+                    newLeft = startLeft + (startW - this.MIN_WIDTH);
+                }
+            }
+            if (newH < this.MIN_HEIGHT) {
+                newH = this.MIN_HEIGHT;
+                // Si esta en modo NORTE, corregir TOP
+                if (dir.includes('n')) {
+                    newTop = startTop + (startH - this.MIN_HEIGHT);
+                }
+            }
+
+            // 3. Renderizar
+            node.style.width = `${newW}px`;
+            node.style.height = `${newH}px`;
+            node.style.left = `${newLeft}px`;
+            node.style.top = `${newTop}px`;
+        };
+
+        const onMouseUp = () => {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        };
+
+        handle.addEventListener('mousedown', (e) => {
+            if (e.button !== 0 || node.classList.contains('maximized')) return;
+            e.stopPropagation(); // Pa q no active el drag de la ventana
+
+            this.focus(node);
+
+            // Guardar estado inicial
+            startX = e.clientX;
+            startY = e.clientY;
+
+            // Estilos computados actuales
+            const rect = node.getBoundingClientRect();
+            startW = rect.width;
+            startH = rect.height;
+            startLeft = rect.left;
+            startTop = rect.top;
+
             window.addEventListener('mousemove', onMouseMove);
             window.addEventListener('mouseup', onMouseUp);
         });
