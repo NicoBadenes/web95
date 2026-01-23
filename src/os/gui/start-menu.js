@@ -106,8 +106,14 @@ class StartMenu {
             {
                 icon: '🛑', label: 'Shut Down...',
                 action: () => {
-                    if(confirm('Are you sure you want to restart the computer?')) {
-                        window.location.reload(); 
+                    if(confirm('Are you sure you want to shut down?\n\nThis will clear all data and reset the system.')) {
+                        // Efecto visual (espera un poco)
+                        document.body.style.cursor = 'wait';
+
+                        setTimeout(() => {
+                            localStorage.clear();
+                            window.location.reload(); 
+                        }, 1000); // 1 segundo antes del shutdown 
                     }
                 }
             }
