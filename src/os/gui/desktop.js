@@ -17,6 +17,11 @@ class Desktop{
         this.iconsContainer = mk('div', { id: 'desktop-icons'});
         this.rootElement.appendChild(this.iconsContainer);
 
+        // Crea la caja de seleccion
+        this.selectionBox = mk('div', { id: 'selection-box' });
+        this.rootElement.appendChild(this.selectionBox);
+
+
         this.selectedIcon = null;
 
         // --- CONSTANETS DE GRILLA ---
@@ -28,6 +33,9 @@ class Desktop{
 
     init() {
         this.render();
+
+        // Iniciar listeners de la caja
+        this.initSelectionBehavior();
 
         //Click en el fondo vacio deselecciona los iconos
         this.rootElement.addEventListener('mousedown', (e) => {
@@ -144,6 +152,14 @@ class Desktop{
         this.deselectAll(); //Quitar seleccion a otros
         node.classList.add('selected');
         this.selectedIcon = node;
+    }
+
+    /**
+     * Deveulve una lista con los 'data-pathd de todos los iconos seleccionados.      
+    */
+    getSelectedFiles() {
+        const selectedElements = this.iconsContainer.querySelectorAll('.selected');
+        return Array.from(selectedElements).map(el => el.getAttribute('data-path'));
     }
 
     deselectAll(){
@@ -284,7 +300,6 @@ class Desktop{
             fs.updateMeta(filename, {
                 pos: { x: snapLeft, y: snapTop}
             });
-            // ===============================
 
             setTimeout(() => { element.style.transition = 'none';}, 200);
             element.style.zIndex = '';
@@ -292,6 +307,7 @@ class Desktop{
 
         element.addEventListener('mousedown', (e) => {
             if (e.button !== 0) return;
+            e.stopPropagation();
             isDragging = true;
             element.style.transition = 'none';
             element.style.zIndex = 100;
@@ -306,6 +322,92 @@ class Desktop{
         });
     }
 
+    /**
+     * Logica para dibujar la caja azul y seleccionar
+     */
+    initSelectionBehavior(){
+        let isSelecting = false;
+        let startX, startY;
+
+        // 1. Al holdear en el fondo
+        this.rootElement.addEventListener('mousedown', (e) => {
+            // Si clickeo un icono o la barra, no inicia caja
+            if (e.target !== this.rootElement && e.target !== this.iconsContainer) return;
+            if (e.button !== 0) return; //Solo el izquierdo
+
+            isSelecting = true;
+            startX = e.clientX;
+            startY = e.clientY;
+
+            this.deselectAll();
+
+            // Resetear y mostrar caja en tamaño 0
+            this.selectionBox.style.left = `${startX}px`;
+            this.selectionBox.style.top = `${startY}px`;
+            this.selectionBox.style.width = '0px';
+            this.selectionBox.style.height = '0px';
+            this.selectionBox.style.display = 'block';
+        });
+
+        // 2. Al mover el mouse
+        window.addEventListener('mousemove', (e) => {
+            if (!isSelecting)return;
+            e.preventDefault(); //Evitar seleccionar texto del navegador
+
+            const currentX = e.clientX;
+            const currentY = e.clientY;
+
+            // Calcular geometria
+            const left = Math.min(currentX, startX);
+            const top = Math.min(currentY, startY);
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+
+            // Aplicar estilos visuales
+            this.selectionBox.style.left = `${left}px`;
+            this.selectionBox.style.top = `${top}px`;
+            this.selectionBox.style.width = `${width}px`;
+            this.selectionBox.style.height = `${height}px`;
+
+            // Detectar q inconos toca
+            this.checkSelectionCollisions(left, top, width, height);
+        });
+
+        // 3. Al soltar el click
+        window.addEventListener('mouseup', () => {
+            if (isSelecting) {
+                isSelecting = false;
+                this.selectionBox.style.display = 'none';
+            }
+        });
+    }
+        /**
+         * Reivsa colisiones (AABB) entre caja y los iconos
+         */
+    checkSelectionCollisions(boxX, boxY, boxW, boxH) {
+        const icons = Array.from(this.iconsContainer.children);
+
+        const boxRight = boxX + boxW;
+        const boxBottom = boxY + boxH;
+
+        icons.forEach(icon => {
+            const rect = icon.getBoundingClientRect();
+
+            // Matematica de interseccion de rectangulos
+            const noOverlap = (
+                rect.left > boxRight ||
+                rect.right < boxX ||
+                rect.top > boxBottom ||
+                rect.bottom < boxY
+            );
+
+            if (!noOverlap) {
+                icon.classList.add('selected');
+            } else{
+                icon.classList.remove('selected');
+            }
+        });
+    }
 }
 
 

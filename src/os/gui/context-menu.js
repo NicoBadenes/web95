@@ -40,30 +40,72 @@ class ContextMenu {
 
         // Caso 1: Click en un ICONO del escritorio
         const iconElement = target.closest('.desktop-icon');
+        
         if (iconElement) {
-            const filePath = iconElement.getAttribute('data-path');
-            const node = fs.resolve(filePath);
+            const clickPath = iconElement.getAttribute('data-path');
+
+            // Logica de Seleccion Inteligente
+            // Si le das click derecho a alog que NO esta seleccionado
+            // asume que queres seleccioanr SOLO eso y olvidar el resto.
+            if (!iconElement.classList.contains('selected')) {
+                desktop.deselectAll();
+                iconElement.classList.add('selected');
+            }
+
+            // Ahora recuepra todos los seleccionados (puede ser 1 o muchos)
+            const selectedPaths = desktop.getSelectedFiles();
+
+            // Texto dinamico
+            const count = selectedPaths.length;
+            const suffix = count > 1 ? ` (${count})` : '';
 
             menuItems = [
-                { label: 'Open', action: () => desktop.openFileOrFolder(filePath, node)},
+                {
+                    label: `Open${suffix}`,
+                    action: () => this.actionOpen(selectedPaths),
+                    style: 'font-weight: bold;'
+                },
+                { separator: true},
+                // Rename solo tiene sentido para un archivo a la vez
+                {
+                    label: 'Rename',
+                    disabled: count > 1, //Deshabilitar para multiples
+                    action: () => this.actionRename(clickPath)
+                },
+                {
+                    label: `Delete${suffix}`,
+                    action: () => this.actionDelete(selectedPaths)
+                },
                 { separator: true },
-                { label: 'Rename', action: () => this.actionRename(filePath) },
-                { label: 'Delete', action: () => this.actionDelete(filePath) },
-                { separator: true },
-                { label: 'Properties', action: () => alert(`File: ${filePath}\nType: ${node.type}`) } 
+                {
+                    label: 'Properties',
+                    action: () => alert(`Properties of ${count} items`)
+                }
             ];
         }
-        // CASO 2: Click en el FONDO del escritorio
+        // Caso 2: Click en desktop
         else if(target.id === 'desktop' || target.id === 'desktop-icons') {
             menuItems = [
-                { label: 'New Folder', action: () => this.actionNewFolder() },
-                { label: 'New Text Document', action: () => this.actionNewFile() },
+                { label: 'View', disabled: true },
                 { separator: true },
+
+                // Submenu
+                {
+                    label: 'New',
+                    submenu: [
+                        { label: 'Folder', action: () => this.actionNewFolder() },
+                        { label: 'Text Document', action: () => this.actionNewFile() }
+                    ]
+                },
+
+                { separator: true},
                 { label: 'Refresh', action: () => desktop.render() },
-                { label: 'Properties', action: () => alert('Display properties not implemented yet.') }
+                { separator: true},
+                { label: 'Properties', action: () => alert('Display Properties')}
             ];
         }
-        // CASO 3: Click en Barra de tareas 
+
+        // Caso 3: Click en Taskbar
         else if(target.closest('#taskbar')) {
             menuItems = [
                 { label: 'Task Manager', action: () => alert('Task Manager...') },
@@ -138,15 +180,50 @@ class ContextMenu {
 
     // --- ACCIONES DEL SISTEMA ---
 
-    actionDelete(path) {
-        if (confirm(`Are you sure you want to delete '${path}'?`)) {
-            try{
-                fs.delete(path);
-                desktop.render(); // Refrescar iconos
-            } catch(err) {
-                alert(err.message);
-            }
+    actionDelete(paths) {
+        // pa asegurar q es un array
+        const targets = Array.isArray(paths) ? paths : [paths];
+        
+        const count = targets.length;
+        const msg = count === 1
+            ? `Delete '${targets[0]}'?`
+            : `Delete these ${count} items?`;
+
+        if (confirm(msg)) {
+            let errors = [];
+            targets.forEach(path => {
+                try {
+                    fs.delete(path);
+                } catch(e) {
+                    errors.push(`${path}: ${e.message}`);
+                }
+            });
+
+            if (errors.length > 0) alert(`Errors:\n${errors.join('\n')}`);
+            
+            // Refresh desktop
+            desktop.render();
         }
+    }
+
+    actionOpen(paths) {
+        // Para segurarse
+        const targets = Array.isArray(paths) ? paths : [paths];
+
+        // Limites de seguridad
+        if (targets.length > 5) {
+            if (!confirm(`Are you sure you want to open ${targets.length} windows?`)) return;
+        }
+
+        targets.forEach(path => {
+            // Resolver el nodo para saber si es carpeta o archivo
+            try {
+                const node = fs.resolve(path);
+                desktop.openFileOrFolder(path, node);
+            } catch (err) {
+                console.error(`Could not open ${path}:`, err);
+            }
+        });
     }
 
     actionRename(oldPath) {
