@@ -17,7 +17,7 @@ export const imageViewer = {
                 src: src,
                 // Usa el title como texto alternativo
                 alt: title,
-                style: 'width: 100%; height: 100%; object-fit: contain; display: block;'
+                style: 'width: 100%; height: 100%; object-fit: fill; display: block;'
             },
             // Evitar que se arrastre la imagen fantasma fuera de la ventana
             events: {
@@ -45,8 +45,15 @@ export const imageViewer = {
         img.onload = () => {
             // Busca la ventana padre subiendo por el DOM
             const windowNode = container.closest('.window');
+            const windowBody = container.closest('.window-body');
 
             if (windowNode) {
+                // Saca el padding para q la foto toque los bordes
+                if (windowBody) {
+                    windowBody.style.padding = '0px';
+                    windowBody.style.overflow = 'hidden';
+                }
+
                 // A. Medir dimensiones reales de la imagen
                 const realW = img.naturalWidth;
                 const realH = img.naturalHeight;
@@ -56,8 +63,8 @@ export const imageViewer = {
                 const maxH = window.innerHeight * 0.9;
 
                 // C. Calcular tamaño final (Imagen + un poco de margen para bordes)
-                let finalW = Math.min(realW + 20, maxW);
-                let finalH = Math.min(realH + 40, maxH);
+                let finalW = Math.min(realW + 6, maxW);
+                let finalH = Math.min(realH + 28, maxH);
 
                 // D. Minimos de seguridad (para no hacer una ventana micro)
                 finalW = Math.max(finalW, 200);
