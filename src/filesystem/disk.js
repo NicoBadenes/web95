@@ -43,6 +43,11 @@ export const INITIAL_DISK = {
             content: './images/web95LOGO.png'
         },
 
+        'otter.png': {
+            type: 'file',
+            content: './images/otter.png'
+        },
+
         //Archivo suelto en la raiz
         'welcome.msg': {
             type: 'file',
