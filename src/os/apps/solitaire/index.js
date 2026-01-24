@@ -1,58 +1,70 @@
 /**
  * @file src/os/apps/solitaire/index.js
- * @description Punto de entrada de la app (testing)
+ * @description Construccion del Tablero Visual (UI Layout)
  */
 
-import { SolitaireEngine } from "./logic.js";
-import { mk } from '../../../utils/dom.js';
+import { mk, loadCSS } from '../../../utils/dom.js';
+import { SolitaireEngine } from './logic.js';
 
 export const solitaireApp = {
     run() {
-        console.group("🃏 Solitaire Logic Test ")
+        loadCSS('solitaire-css', 'src/os/apps/solitaire/solitaire.css')
         
-        // 1. Instanciar motor
+        // Instanciar motor
         const game = new SolitaireEngine();
-        console.log("Engine started.");
-
-        // 2. Iniciar juego (Barajar y repartir)
         game.initGame();
-        console.log("Game initialized (Shuffled and Dealt).");
 
-        // 3. Verificar el Mazo restante
-        // Total 52 cartas, Se reparten 28 en el tablero (1+2+3+4+5+6+7).
-        // Deberian sobrar 24 cartas en el mazo.
-        const deckCount = game.deck.length;
-        console.log(`Cards in deck: ${deckCount} (Expected: 24) -> ${deckCount === 24 ? 'OK' : 'FAIL'}`);
+        console.log('Solitaire UI: Board Rendered.');
 
-        // 4. Verificar las columnas (Tableau)
-        console.log("Verifying tableau columns:");
-        let totalTableauCards = 0;
+        // Construccion del tablero
 
-        game.tableau.forEach((col, index) => {
-            const count = col.length;
-            totalTableauCards += count;
-            const expected = index + 1; // Col 0 debe tener 1 carta, Col 1 debe tener 2 cartas...
-
-            // La ultima carta debe estar boca arriba
-            const lastCard = col[col.length - 1];
-            const isFaceUp = lastCard ? lastCard.faceUp : false;
-
-            const colStatus = (count === expected && isFaceUp) ? 'OK' : 'FAIL';
-
-            console.log(
-                `   Column ${index + 1}: Has ${count} cards. ` + 
-                `Last: ${lastCard.rank}${lastCard.suit} (faceUp: ${isFaceUp}) ` +
-                `-> ${colStatus}`
-            );
+        // Area del mazo (Izquierda arriba)
+        const deckArea = mk('div', {
+            className: 'deck-area',
+            children: [
+                // Slot del mazo
+                mk ('div', { className: 'slot', attributes: { id: 'stock-slot' } }),
+                // Slot de descarte (waste)
+                mk('div', { className: 'slot', attributes: { id: 'waste-slot' } })
+            ]
         });
 
-        console.log(`Total cards on table: ${totalTableauCards} (Expected: 28)`);
-        console.groupEnd();
+        // Area de funcaciones (Derecha arriba - 4 espacios)
+        const foundationArea = mk('div', {
+            className: 'foundation-area',
+            children: [
+                mk('div', { className: 'slot', attributes: { 'data-foundation': '0' } }),
+                mk('div', { className: 'slot', attributes: { 'data-foundation': '1' } }),
+                mk('div', { className: 'slot', attributes: { 'data-foundation': '2' } }),
+                mk('div', { className: 'slot', attributes: { 'data-foundation': '3' } })
+            ]
+        });
 
-        // Retorna un div simple para q la ventana no de error al abrirse
+        // Agrupar A y B en la seccion superior
+        const topSection = mk('div', {
+            className: 'top-section',
+            children: [deckArea, foundationArea]
+        });
+
+        // Area del tablero (Abajo - las 7 columnas)
+        const tableauCols = [];
+        for (let i = 0; i < 7; i++) {
+            tableauCols.push(mk('div', {
+                className: 'tableau-col',
+                attributes: { 'data-col': i }
+            }));
+        }
+
+        //Div padre q contiene las columnas
+        const tableauArea = mk('div', {
+            className: 'tableau-area',
+            children: tableauCols
+        });
+
+        // Retornar el tablero completo
         return mk('div', {
-            text: 'Test executed. Check Console.',
-            style: 'padding: 20px; color: white; background: #008000; height: 100%;'
+            className: 'solitaire-board',
+            children: [topSection, tableauArea]
         });
     }
 };

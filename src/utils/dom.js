@@ -46,11 +46,26 @@ export function mk(tag, options = {}) {
 
     return element;
 
-    }
+}
 
-    /**
-     * Selecciona un elemento del DOM.
-     */
-    export function $(selector) {
-        return document.querySelector(selector);
+/**
+ * Selecciona un elemento del DOM.
+ * @param {string} selector
+ * @returns {HTMLElement|null}
+ */
+export function $(selector) {
+    return document.querySelector(selector);
+}
+/**
+ * @param {string} id
+ * @param {string} href
+ */
+export function loadCSS(id, href) {
+    if (document.getElementById(id)) return;
+
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link)
 }
