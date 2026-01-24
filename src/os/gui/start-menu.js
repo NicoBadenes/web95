@@ -11,6 +11,7 @@ import { terminal } from '../apps/terminal.js';
 import { snakeGame } from '../apps/snake.js';
 import { calculator } from '../apps/calculator.js';
 import { browser } from '../apps/browser.js';
+import { solitaireApp } from '../apps/solitaire/index.js';
 
 class StartMenu {
     constructor() {
@@ -70,6 +71,18 @@ class StartMenu {
                         w: 250, h:320,
                         content: calculator.run(),
                         fixedSize: true
+                    });
+                }
+            },
+
+            {
+                icon: '🃏', label: 'Solitaire',
+                action: () => {
+                    wm.open({
+                        id: 'solitaire',
+                        title: 'Solitaire',
+                        w: 600, h: 450,
+                        content: solitaireApp.run()
                     });
                 }
             },
