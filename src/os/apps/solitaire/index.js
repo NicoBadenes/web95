@@ -1,11 +1,12 @@
 /**
  * @file src/os/apps/solitaire/index.js
- * @description Fisica de Cartas (Drag & Drop + Snap Back)
+ * @description Fisica de Cartas (Drag & Drop + Snap Back) y reglas y movimientos
  */
 
 import { mk, loadCSS, $ } from '../../../utils/dom.js';
 import { SolitaireEngine} from './logic.js';
 
+let listenersAttached = false;
 let gameInstance = null;
 let uiRefs = {};
 
@@ -145,22 +146,26 @@ function setupDragEvents(boardElement) {
         const cardEl = e.target.closest('.card');
         // Solo arrastra si es carta, no esta boca abajo, y no esta ya arrastrando
         if (!cardEl || cardEl.classList.contains('back') || dragState.isDragging) return;
-
+        e.preventDefault();
         // Iniciar drag
         startDrag(e, cardEl);
     });
 
     // 2. Mousemove: mover
-    document.addEventListener('mousemove', (e) => {
-        if (!dragState.isDragging) return;
-        moveDrag(e);
-    });
+    if (!listenersAttached) {
+        document.addEventListener('mousemove', (e) => {
+            if (!dragState.isDragging) return;
+            moveDrag(e);
+        });
 
-    // 3. Mouseup: soltar
-    document.addEventListener('mouseup', (e) => {
-        if (!dragState.isDragging) return;
-        endDrag(e);
-    });
+        // 3. Mouseup: soltar
+        document.addEventListener('mouseup', (e) => {
+            if (!dragState.isDragging) return;
+            endDrag(e);
+        });
+
+        listenersAttached = true;
+    }
 }
 
 function startDrag(e, cardEl) {
@@ -231,14 +236,55 @@ function moveDrag(e) {
 function endDrag(e) {
     dragState.isDragging = false;
 
-    // Snap Back
-    // Como no hay reglas, asume q el movimiento es invalido y resetea
+    // 1. Detectar donde se suelta (Drop Target)
+    // Como las cartas que se arrastran tienen pointerEvents='none',
+    // el elementFromPoint va a ver lo que esta "debajo" de las cartas
+    const dropTarget = getDropTarget(e.clientX, e.clientY);
 
-    // Vuelve a pintar la columna original completa para resetear estilos
-    // Es mas facil q calcular la animacion de veulta manual por ahora.
-    console.log("Snap Back! (Rules not implemented yet)");
-    renderTableau(gameInstance, uiRefs.tableauCols);
+    let moveSuccessful = false;
 
-    // Limpieza
+    if (dropTarget) {
+        // Intenta mover en el Motor Logico
+        // dropTarget.col es el indice de la columna destino (0-6)
+        if (dropTarget.type === 'tableau') {
+            moveSuccessful = gameInstance.moveTableauToTableau(
+                dragState.originCol,
+                dropTarget.col,
+                dragState.originIndex
+            );
+        }
+    }
+
+    if (moveSuccessful) {
+        // Si funciono, re-renderiza todo el tablero para mostrar el nuevo estado
+        // (Esto tambien arregla los estilos fixed/absolute automaticamente)
+        console.log("Move successful");
+        renderTableau(gameInstance, uiRefs.tableauCols);
+    } else{
+        // Si fallo (reglas invalidas o soltado en la nada), Snap Back
+        console.log("Invalid move -> Snap Back");
+        renderTableau(gameInstance, uiRefs.tableauCols);
+    }
+
     dragState.cards = [];
+}
+
+/**
+ * Averigua sobre que columna se suelta el mouse
+ */
+function getDropTarget(x, y) {
+    // Busca elemento bajo el mouse
+    const element = document.elementFromPoint(x, y);
+    if (!element) return null;
+
+    // Es una columna o una carta dentro de una columna?
+    const colElement = element.closest('.tableau-col');
+    if (colElement) {
+        const colIndex = parseInt(colElement.dataset.col);
+        return { type: 'tableau', col: colIndex };
+    }
+
+    // (Logica para foundation despues)
+
+    return null;
 }
