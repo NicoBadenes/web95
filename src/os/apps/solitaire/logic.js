@@ -1,6 +1,6 @@
 /**
  * @file src/os/apps/solitaire/logic.js
- * @description Logica del juego (Reglas y Estado)
+ * @description Logica del juego (Reglas, estado, fundaciones)
  */
 
 export const SUITS = ['♠', '♥', '♣', '♦'];
@@ -112,5 +112,38 @@ export class SolitaireEngine {
         }
 
         return false;
+    }
+
+    /**
+     * Intenta subir una carta a la fundacion
+     */
+    moveTableauToFoundation(fromColIdx, foundationSuitIdx) {
+        const sourceCol = this.tableau[fromColIdx];
+        if (sourceCol.length === 0) return false;
+
+        const card = sourceCol[sourceCol.length - 1]; // Solo se puede subir la ultima carta
+        const targetSuit = SUITS[foundationSuitIdx];
+        const pile = this.foundations[targetSuit];
+
+        // Regla 1: El palo debe coincidir con el slot
+        if (card.suit !== targetSuit) return false;
+
+        // Regla 2: Orden ascendente (A, 2, 3...)
+        if (pile.length === 0) {
+            // Si esta vacia, solo acepta As
+            if (card.rank !== 'A') return false;
+        } else{
+            // Si ya hay cartas, debe ser el siguiente valor
+            const topCard = pile[pile.length - 1];
+            if (card.value !== topCard.value + 1) return false;
+        }
+
+        // Si paso las reglas, continua
+        pile.push(sourceCol.pop());
+
+        // Voltea la de abajo en el tableau si quedo alguna
+        if (sourceCol.length > 0) sourceCol[sourceCol.length - 1].faceUp = true;
+
+        return true;
     }
 }

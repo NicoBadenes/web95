@@ -1,10 +1,10 @@
 /**
  * @file src/os/apps/solitaire/index.js
- * @description Fisica de Cartas (Drag & Drop + Snap Back) y reglas y movimientos
+ * @description Fisica de Cartas (Drag & Drop + Snap Back) y reglas y movimientos + fundacinoes + bugfix de velocidad
  */
 
 import { mk, loadCSS, $ } from '../../../utils/dom.js';
-import { SolitaireEngine} from './logic.js';
+import { SolitaireEngine, SUITS} from './logic.js';
 
 let listenersAttached = false;
 let gameInstance = null;
@@ -34,31 +34,54 @@ export const solitaireApp = {
         
         // Repartir
         renderTableau(gameInstance, uiRefs.tableauCols);
-        renderDeck(gameInstance);
+        renderDeck(gameInstance, uiRefs.stockSlot);
+        renderFoundations(gameInstance, uiRefs.foundationSlots);
 
-        console.log('Physics Engine Loaded.')
+        console.log('Solitaire: Ready & Rendered.')
         return board;
     }
 };
 
 // Construccion UI
 function buildBoard() {
+    //A. Area del mazo (Guarda referencias explicitas)
+    const stockSlot = mk('div', { className: 'slot', attributes: { id: 'stock-slot' } });
+    const wasteSlot = mk('div', { className: 'slot', attributes: { id: 'waste-slot '} });
+
+    // Guarda uiRefs para usarlos sin buscar en el DOM
+    uiRefs.stockSlot = stockSlot;
+    uiRefs.wasteSlot = wasteSlot;
+
     const deckArea = mk('div', {
         className: 'deck-area',
-        children: [
-            mk('div', { className: 'slot', attributes: { id: 'stock-slot' } }),
-            mk('div', { className: 'slot', attributes: { id: 'waste-slot '} })
-        ]
+        children: [stockSlot, wasteSlot]
     });
+
+    // B. Area de fundacinoes
+    const foundationSlots = [];
+
+    // Crea los 4 slots y los guarda
+    SUITS.forEach((suit, i) => {
+        const slot = mk('div', {
+            className: 'slot',
+            attributes: { 'data-foundation': i },
+            text: suit
+        });
+        // Estilo inicial del placeholder
+        slot.style.color = 'rgba(0,0,0,0.2)';
+        slot.style.fontSize = '30px';
+        slot.style.lineHeight = '96px';
+        slot.style.textAlign = 'center';
+
+        foundationSlots.push(slot);
+    });
+
+    // Guarda la lista de slots
+    uiRefs.foundationSlots = foundationSlots;
 
     const foundationArea = mk('div', {
         className: 'foundation-area',
-        children: [
-            mk('div', { className: 'slot', attributes: { 'data-foundation': '0' } }),
-            mk('div', { className: 'slot', attributes: { 'data-foundation': '1' } }),
-            mk('div', { className: 'slot', attributes: { 'data-foundation': '2' } }),
-            mk('div', { className: 'slot', attributes: { 'data-foundation': '3' } })
-        ]
+        children: foundationSlots
     });
 
     const topSection = mk('div', {
@@ -66,6 +89,7 @@ function buildBoard() {
         children: [deckArea, foundationArea]
     });
 
+    // C. Tableau (columnas)
     const tableauColsElements = [];
     for (let i = 0; i < 7; i++) {
         const col = mk('div', {
@@ -108,13 +132,41 @@ function renderTableau(game, colElements) {
     });
 }
 
-function renderDeck(game) {
-    const stockSlot = document.getElementById('stock-slot');
-    if (!stockSlot) return;
-    stockSlot.innerHTML = '';
+function renderDeck(game, slotDOM) {
+    if (!slotDOM) return;
+    slotDOM.innerHTML = '';
+
+    // Si quedan cartas, dibuja el dorso
     if (game.deck.length > 0) {
-        stockSlot.appendChild(mk('div', { className: 'card back' }));
+        slotDOM.appendChild(mk('div', { className: ['card', 'back'] }));
     }
+}
+
+function renderFoundations(game, slotsDOM) {
+    // Recorre los 4 palos
+    SUITS.forEach((suit, index) => {
+        const pile = game.foundations[suit];
+        const slotDOM = slotsDOM[index]; // Asume orden DOM coindice con SUITS
+
+        // Limpia (borra el simbolo de fondo si hay carta, o actualiza la carta anterior)
+        slotDOM.innerHTML = '';
+
+        if (pile.length === 0) {
+            // Si vacio, pone el simbolo gris clarito de fondo de nuevo
+            slotDOM.textContent = suit;
+            slotDOM.style.color = 'rgba(0,0,0,0.2)';
+            slotDOM.style.fontSize = '30px';
+            slotDOM.style.lineHeight = '96px';
+            slotDOM.style.textAlign = 'center';
+        } else{
+            // Si hay carta, muestra la ultima
+            const topCard = pile[pile.length - 1];
+            const cardEl = createCardElement(topCard);
+            // Saca posicion absoluta para que encaje en el slot
+            cardEl.style.position = 'static';
+            slotDOM.appendChild(cardEl);
+        }
+    });
 }
 
 function createCardElement(card) {
@@ -146,6 +198,9 @@ function setupDragEvents(boardElement) {
         const cardEl = e.target.closest('.card');
         // Solo arrastra si es carta, no esta boca abajo, y no esta ya arrastrando
         if (!cardEl || cardEl.classList.contains('back') || dragState.isDragging) return;
+        
+        if (cardEl.parentElement.classList.contains('slot')) return;
+
         e.preventDefault();
         // Iniciar drag
         startDrag(e, cardEl);
@@ -209,26 +264,12 @@ function startDrag(e, cardEl) {
 }
 
 function moveDrag(e) {
-    // Calcular cuanto se movio el mouse
-    const dx = e.clientX - dragState.startX;
-    const dy = e.clientY - dragState.startY;
-
-    // Mover cada carta arrastrada
     dragState.cards.forEach((card, index) => {
-        const initialRect = dragState.initialPositions[index];
-        // Como cambie a fixed, no se puede usar initialPositions directo del style
-        // Se necesita sumar el delta al valor actual.
-        // O sea mueve sumando dx/dy al valor que tenian al momento del click
-
         const currentLeft = parseFloat(card.style.left);
         const currentTop = parseFloat(card.style.top);
-
-        // Actualiza start para el siguiente frame
-        card.style.left = (currentLeft + (e.movementX)) + 'px';
-        card.style.top = (currentTop +  (e.movementY)) + 'px';
+        card.style.left = (currentLeft + e.movementX) + 'px';
+        card.style.top = (currentTop + e.movementY) + 'px';
     });
-
-    // Actualiza referencias para el proximo frame
     dragState.startX = e.clientX;
     dragState.startY = e.clientY;
 }
@@ -244,8 +285,7 @@ function endDrag(e) {
     let moveSuccessful = false;
 
     if (dropTarget) {
-        // Intenta mover en el Motor Logico
-        // dropTarget.col es el indice de la columna destino (0-6)
+        // A. Movimiento Tableau -> Tableau
         if (dropTarget.type === 'tableau') {
             moveSuccessful = gameInstance.moveTableauToTableau(
                 dragState.originCol,
@@ -253,38 +293,49 @@ function endDrag(e) {
                 dragState.originIndex
             );
         }
+        // B. Movimiento Tableau -> Foundation
+        else if(dropTarget.type === 'foundation') {
+            // Solo se puede subir de a una carta a la vez
+            if (dragState.cards.length === 1) {
+                moveSuccessful = gameInstance.moveTableauToFoundation(
+                    dragState.originCol,
+                    dropTarget.foundationIdx
+                );
+            }
+        }
     }
 
     if (moveSuccessful) {
-        // Si funciono, re-renderiza todo el tablero para mostrar el nuevo estado
-        // (Esto tambien arregla los estilos fixed/absolute automaticamente)
-        console.log("Move successful");
+        // Re-renderiza todo (tableau y foundation)
         renderTableau(gameInstance, uiRefs.tableauCols);
+        renderFoundations(gameInstance, uiRefs.foundationSlots);
     } else{
-        // Si fallo (reglas invalidas o soltado en la nada), Snap Back
-        console.log("Invalid move -> Snap Back");
-        renderTableau(gameInstance, uiRefs.tableauCols);
+        renderTableau(gameInstance, uiRefs.tableauCols); // Snap back
     }
 
     dragState.cards = [];
 }
 
 /**
- * Averigua sobre que columna se suelta el mouse
+ * Detecta donde cae el mouse (Columna, fundacion)
  */
 function getDropTarget(x, y) {
     // Busca elemento bajo el mouse
     const element = document.elementFromPoint(x, y);
     if (!element) return null;
 
-    // Es una columna o una carta dentro de una columna?
+    // 1. Es columna?
     const colElement = element.closest('.tableau-col');
     if (colElement) {
-        const colIndex = parseInt(colElement.dataset.col);
-        return { type: 'tableau', col: colIndex };
+        return { type: 'tableau', col: parseInt(colElement.dataset.col) };
     }
 
-    // (Logica para foundation despues)
+    // 2. Es fundacion?
+    // Puede q se haya soltado sobre un slot vacio o sobre una carta
+    const slotElement = element.closest('.foundation-area .slot');
+    if (slotElement) {
+        return { type: 'foundation', foundationIdx: parseInt(slotElement.dataset.foundation) };
+    }
 
     return null;
 }
