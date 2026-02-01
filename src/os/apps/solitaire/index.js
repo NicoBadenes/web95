@@ -13,7 +13,8 @@ let uiRefs = {};
 // Estado del drag 
 let dragState = {
     isDragging: false,
-    cards: [],             // Las cartas q estas moviendo
+    cards: [],            // Las cartas q estas moviendo
+    originType: null,     // Tableau o waste
     originCol: null,      // De q columna salieron
     originIndex: null,    // Indice original
     startX: 0, startY: 0, // Posicion inicial del mouse
@@ -35,6 +36,7 @@ export const solitaireApp = {
         // Repartir
         renderTableau(gameInstance, uiRefs.tableauCols);
         renderDeck(gameInstance, uiRefs.stockSlot);
+        renderWaste(gameInstance, uiRefs.wasteSlot);
         renderFoundations(gameInstance, uiRefs.foundationSlots);
 
         console.log('Solitaire: Ready & Rendered.')
@@ -126,6 +128,7 @@ function renderTableau(game, colElements) {
             // Datos importantes para el drag
             cardEl.dataset.col = colIndex;
             cardEl.dataset.index = cardIndex;
+            cardEl.dataset.zone = 'tableau'; //Marca la zona
 
             domCol.appendChild(cardEl);
         });
@@ -139,6 +142,21 @@ function renderDeck(game, slotDOM) {
     // Si quedan cartas, dibuja el dorso
     if (game.deck.length > 0) {
         slotDOM.appendChild(mk('div', { className: ['card', 'back'] }));
+    }
+}
+
+function renderWaste(game, slotDOM) {
+    if (!slotDOM) return;
+    slotDOM.innerHTML = '';
+
+    if (game.waste.length > 0) {
+        // Muestra solo la ultima carta del descarte
+        // (en el futuro podria mostrar las ultimas 3 en abanico estilo windows)
+        const topCard = game.waste[game.waste.length - 1];
+        const cardEl = createCardElement(topCard);
+        cardEl.style.position = 'static';
+        cardEl.dataset.zone = 'waste';
+        slotDOM.appendChild(cardEl);
     }
 }
 
@@ -193,14 +211,27 @@ function createCardElement(card) {
 // Fisica y drag & drop
 
 function setupDragEvents(boardElement) {
+    // Click en el mazo
+    // Usando el ID stock-slot para detectar clicks en el mazo
+    boardElement.addEventListener('click', (e) => {
+        // Si clickeo en el mazo..
+        if (e.target.id === 'stock-slot' || e.target.closest('#stock-slot')) {
+            gameInstance.drawCard();
+            renderDeck(gameInstance, uiRefs.stockSlot);
+            renderWaste(gameInstance, uiRefs.wasteSlot);
+        }
+    });
+
     // Mousedown: aggarra carta(s)
     boardElement.addEventListener('mousedown', (e) => {
         const cardEl = e.target.closest('.card');
         // Solo arrastra si es carta, no esta boca abajo, y no esta ya arrastrando
         if (!cardEl || cardEl.classList.contains('back') || dragState.isDragging) return;
         
-        if (cardEl.parentElement.classList.contains('slot')) return;
-
+        if (cardEl.parentElement.classList.contains('slot') && cardEl.dataset.zone !== 'waste') {
+            return;
+        }
+        
         e.preventDefault();
         // Iniciar drag
         startDrag(e, cardEl);
@@ -228,20 +259,21 @@ function startDrag(e, cardEl) {
     dragState.startX = e.clientX;
     dragState.startY = e.clientY;
 
-    // Identificar columna e indice
-    const colIdx = parseInt(cardEl.dataset.col);
-    const cardIdx = parseInt(cardEl.dataset.index);
+    // Detectar origen
+    const zone = cardEl.dataset.zone; // tableau o waste
 
-    dragState.originCol = colIdx;
-    dragState.originIndex = cardIdx;
+    if (zone === 'tableau') {
+        dragState.originType = 'tableau';
+        dragState.originCol = parseInt(cardEl.dataset.col);
+        dragState.originIndex = parseInt(cardEl.dataset.index);
 
-    // Seleccionar esta carta y tdas las que esten encima
-    // Pilas de cartas
-    const colContainer = uiRefs.tableauCols[colIdx];
-    const allCardsInCol = Array.from(colContainer.children);
-
-    // Corta desde la carta seleccionada hasta el final
-    dragState.cards = allCardsInCol.slice(cardIdx);
+        const colContainer = uiRefs.tableauCols[dragState.originCol];
+        const allCards = Array.from(colContainer.children);
+        dragState.cards = allCards.slice(dragState.originIndex);
+    } else if (zone === 'waste') {
+        dragState.originType = 'waste';
+        dragState.cards = [cardEl]; // Solo se puede mover una carta del waste
+    }
 
     // Preparar las cartas para levantarlas
     dragState.initialPositions = [];
@@ -285,33 +317,32 @@ function endDrag(e) {
     let moveSuccessful = false;
 
     if (dropTarget) {
-        // A. Movimiento Tableau -> Tableau
-        if (dropTarget.type === 'tableau') {
-            moveSuccessful = gameInstance.moveTableauToTableau(
-                dragState.originCol,
-                dropTarget.col,
-                dragState.originIndex
-            );
-        }
-        // B. Movimiento Tableau -> Foundation
-        else if(dropTarget.type === 'foundation') {
-            // Solo se puede subir de a una carta a la vez
-            if (dragState.cards.length === 1) {
-                moveSuccessful = gameInstance.moveTableauToFoundation(
-                    dragState.originCol,
-                    dropTarget.foundationIdx
+        // Caso 1: Viene del tableau
+        if (dragState.originType === 'tableau') {
+            if (dropTarget.type === 'tableau') {
+                moveSuccessful = gameInstance.moveTableauToTableau(
+                    dragState.originCol, dropTarget.col, dragState.originIndex
                 );
+            } else if (dropTarget.type === 'foundation' && dragState.cards.length === 1) {
+                moveSuccessful = gameInstance.moveTableauToFoundation(
+                    dragState.originCol, dropTarget.foundationIdx
+                );
+            }
+        }
+        // Caso 2: Viene del waste
+        else if (dragState.originType === 'waste') {
+            if (dropTarget.type === 'tableau') {
+                moveSuccessful = gameInstance.moveWasteToTableau(dropTarget.col);
+            } else if(dropTarget.type === 'foundation') {
+                moveSuccessful = gameInstance.moveWasteToFoundation(dropTarget.foundationIdx);
             }
         }
     }
 
-    if (moveSuccessful) {
-        // Re-renderiza todo (tableau y foundation)
-        renderTableau(gameInstance, uiRefs.tableauCols);
-        renderFoundations(gameInstance, uiRefs.foundationSlots);
-    } else{
-        renderTableau(gameInstance, uiRefs.tableauCols); // Snap back
-    }
+    // Renderizar (o snap back si fallo)
+    renderTableau(gameInstance, uiRefs.tableauCols);
+    renderFoundations(gameInstance, uiRefs.foundationSlots);
+    renderWaste(gameInstance, uiRefs.wasteSlot); // Refrescar waste tambien
 
     dragState.cards = [];
 }

@@ -82,8 +82,7 @@ class StartMenu {
                         id: 'solitaire',
                         title: 'Solitaire',
                         w: 600, h: 450,
-                        content: solitaireApp.run(),
-                        fixedSize: true
+                        content: solitaireApp.run()
                     });
                 }
             },

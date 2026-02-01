@@ -65,6 +65,23 @@ export class SolitaireEngine {
         } 
     }
 
+    // Funcionalidad del mazo
+    drawCard() {
+        if (this.deck.length > 0) {
+            // Sacar del mazo, poner boca arriba en waste
+            const card = this.deck.pop();
+            card.faceUp = true;
+            this.waste.push(card);
+        } else if (this.waste.length > 0) {
+            // Reciclar: Waste vuelve al Deck (boca abajo y en orden inverso)
+            while (this.waste.length > 0) {
+                const card = this.waste.pop();
+                card.faceUp = false;
+                this.deck.push(card);
+            }
+        }
+    }
+
     // Reglas y movimientos
     
     isValidTableauMove(childCard, parentCard) {
@@ -145,5 +162,38 @@ export class SolitaireEngine {
         if (sourceCol.length > 0) sourceCol[sourceCol.length - 1].faceUp = true;
 
         return true;
+    }
+
+    // Movimiento desde waste
+    moveWasteToTableau(toColIdx) {
+        if (this.waste.length === 0) return false;
+        const card = this.waste[this.waste.length - 1];
+        const targetCol = this.tableau[toColIdx];
+
+        if (this.isValidTableauMove(card, targetCol[targetCol.length - 1])) {
+            targetCol.push(this.waste.pop());
+            return true;
+        }
+        return false;
+    }
+
+    moveWasteToFoundation(foundationSuitIdx) {
+        if (this.waste.length === 0) return false;
+        const card = this.waste[this.waste.length - 1];
+
+        if (this._isValidFoundationMove(card, foundationSuitIdx)) {
+            this.foundations[SUITS[foundationSuitIdx]].push(this.waste.pop());
+            return true;
+        }
+        return false;
+    }
+
+    // Helper privado para no repetir logica
+    _isValidFoundationMove(card, suitIdx) {
+        const targetSuit = SUITS[suitIdx];
+        const pile = this.foundations[targetSuit];
+        if (card.suit !== targetSuit) return false;
+        if (pile.length === 0) return card.rank === 'A';
+        return card.value === pile[pile.length - 1].value + 1;
     }
 }
