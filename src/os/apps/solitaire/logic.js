@@ -213,74 +213,148 @@ export class SolitaireEngine {
         // 1. Check Victory (52 cartas en fundaciones)
         let totalFoundation = 0;
         SUITS.forEach(suit => totalFoundation += this.foundations[suit].length);
-
         console.log(`Checking Win Condition: ${totalFoundation} / 52 cards collected.`)
 
         if (totalFoundation === 52) return 'WIN';
 
-        // 2. Check Defeat (Sin mazo, sin descarte, y sin movimientos en mesa)
-        if (this.deck.length > 0) return 'PLAYING';
+        console.log(`[DEBUG] Deck: ${this.deck.length} cards left. Passes: ${this.deckPasses}/${this.maxPasses}`);
+        console.log(`[DEBUG] Running analysis...`);
 
-        // Si el mazo esta vacio, PERO se puede reciclar, se sigue jugando.
-        if (this.deckPasses < this.maxPasses) return 'PLAYING';
-
-        // Mazo vacio Y limite de reciclaje alcanzado.
-        // Ahora se debe verificar si esta actualmente trabado el juego
-
-        //A. Se puede mover algo del Tableau?
-        if (this.hasAvailableMoves()) return 'PLAYING';
-
-        //B. Se puede mover la carta TOP del waste?
-        if (this.waste.length > 0) {
-            const topWaste = this.waste[this.waste.length - 1];
-
-            // Chequear si va a Fundations
-            for (let s = 0; s < 4; s++) {
-                if (this._isValidFoundationMove(topWaste, s)) return 'PLAYING';
-            }
-
-            // Chequear si va a Tableau
-            for (let c = 0; c < 7; c++) {
-                const targetCol = this.tableau[c];
-                const targetCard = targetCol[targetCol.length - 1];
-                if (this.isValidTableauMove(topWaste, targetCard)) return 'PLAYING';
-            }
+        const hasMoves = this.hasProductiveMoves();
+     
+        if (hasMoves) {
+            console.log(`[DEBUG] Moves detected - Game Continues`);
+            return 'PLAYING';
         }
 
-        // Si se llega hasta aca: Mazo vacio, Sin reciclaje, Tableau trabado y Waste trabado
+        if (this.deck.length > 0 || this.deckPasses < this.maxPasses){
+            console.log(`[DEBUG] No moves on board, but deck is available. Game continues.`);
+            return 'PLAYING';
+        }
+        
+        console.log(`[DEBUG] No moves detected and deck is empty - Game Over`);
         return 'LOSS';
     }
 
-    hasAvailableMoves() {
-        // Revisa si alguna carta visible del tableau se puede mover
+    /**
+     * Verifica si existe algun movimiento productivo (un movimiento que pueda desencadenar en otro)
+     */
+    hasProductiveMoves() {
+        // A. Waste -> Foundations o Tableau (considerando que barajar el deck puede llegar a ser util)
+        if (this.waste.length > 0) {
+            const topWaste = this.waste[this.waste.length - 1];
+            // Waste -> Foundation
+            for (let s = 0; s < 4; s++) {
+                if (this._isValidFoundationMove(topWaste, s)) return true;
+            }
+            // Waste -> Tableau
+            for (let c = 0; c < 7; c++) {
+                const targetCol = this.tableau[c];
+                const targetCard = targetCol[targetCol.length - 1];
+                if (this.isValidTableauMove(topWaste, targetCard)) return true;
+            }
+        }
+
+        // B. Tableau -> Foundation
+        for (let i = 0; i < 7; i++) {
+            const col = this.tableau[i];
+            if (col.length === 0) continue;
+            const topCard = col[col.length - 1];
+            for (let s = 0; s < 4; s++) {
+                if (this._isValidFoundationMove(topCard, s)) return true;
+            }
+        }
+
+        // C. Tableau -> Tableau
         for (let i = 0; i < 7; i++) {
             const col = this.tableau[i];
             if (col.length === 0) continue;
 
-            const firstFaceUpIndex = col.findIndex(c => c.faceUp);
-            if (firstFaceUpIndex === -1) continue;
+            const firstFaceUp = col.findIndex(c => c.faceUp);
+            if (firstFaceUp === -1) continue;
 
-            // Revisa cada carta visible
-            for (let k = firstFaceUpIndex; k < col.length; k++) {
+            // Revisar cada posible movimiento de esta columna
+            for (let k = firstFaceUp; k < col.length; k++) {
                 const cardToCheck = col[k];
 
-                // Puede ir a otra columna ?
                 for (let j = 0; j < 7; j++) {
                     if (i === j) continue;
-                    const targetCol = this.tableau[j]
+
+                    const targetCol = this.tableau[j];
                     const targetCard = targetCol[targetCol.length - 1];
-                    if (this.isValidTableauMove(cardToCheck, targetCard)) return true;
-                }
-                
-                // B. Se puede subir a fundation? (Solo si es la ultima)
-                if (k === col.length - 1) {
-                    for (let s = 0; s < 4; s++) {
-                        if (this._isValidFoundationMove(cardToCheck, s)) return true;
+
+                    // Si el movimiento es legal
+                    if (this.isValidTableauMove(cardToCheck, targetCard)) {
+                        // verificar si es util
+                        if (this._simulateMoveAndCheckProgress(i, j, k)) {
+                            return true; // Al menos un movimiento desencadena en otro
+                        }
                     }
                 }
             }
         }
-        return false; // No se encontraron movimientos salvadores
+
+        return false; // Ningun movimiento desencadena
+    }
+
+    /**
+     * Somula un movimiento, ve si puede desencadenar en otro, y revierte
+     */
+    _simulateMoveAndCheckProgress(fromColIdx, toColIdx, cardIndex) {
+        const sourceCol = this.tableau[fromColIdx];
+        const targetCol = this.tableau[toColIdx];
+
+        // 1. Guardar estado previo. habia carta debajo?
+        const cardBelowIndex = cardIndex - 1;
+        const wasFaceDown = (cardBelowIndex >= 0) && (!sourceCol[cardBelowIndex].faceUp);
+
+        // Si desbloquea una carta oculta -> es util
+        if (wasFaceDown) return true;
+
+        // Si vacia columna -> es util
+        if (cardIndex === 0) return true;
+
+        // 2. Ejecutar movimiento en memoria (Simulacion)
+        const movingCards = sourceCol.splice(cardIndex);
+        targetCol.push(...movingCards);
+
+        let isProductive = false;
+
+        // 3. Chequear consecuencias
+
+        // A. Desde waste
+        if (this.waste.length > 0) {
+            const wasteCard = this.waste[this.waste.length - 1];
+            const newTopSource = sourceCol.length > 0 ? sourceCol[sourceCol.length - 1] : null;
+            if (this.isValidTableauMove(wasteCard, newTopSource)) {
+                isProductive = true;
+            }
+        }
+
+        // B. Desde otra columna
+        if (!isProductive) {
+            for (let c = 0; c < 7; c++) {
+                if (c === fromColIdx || c === toColIdx) continue;
+                const otherCol = this.tableau[c];
+                if (otherCol.length === 0) continue;
+
+                const otherFaceUp = otherCol.findIndex(ca => ca.faceUp);
+                if (otherFaceUp === -1) continue;
+                const otherCard = otherCol[otherFaceUp];
+
+                const newTopSource = sourceCol.length > 0 ? sourceCol[sourceCol.length - 1] : null;
+                if (this.isValidTableauMove(otherCard, newTopSource)) {
+                    isProductive = true;
+                    break;
+                }
+            }
+        }
+
+        // 4. Revertir (backtracking)
+        const movedBack = targetCol.splice(targetCol.length - movingCards.length);
+        sourceCol.push(...movedBack);
+
+        return isProductive;
     }
 }
 
