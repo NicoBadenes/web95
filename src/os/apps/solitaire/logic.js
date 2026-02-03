@@ -29,9 +29,13 @@ export class SolitaireEngine {
         this.waste = [];
         this.foundations = { '♠': [], '♥': [], '♣': [], '♦': [] };
         this.tableau = [[], [], [], [], [], [], []];
+
+        this.deckPasses = 0;
+        this.maxPasses = 3;
     }
 
     initGame() {
+        this.deckPasses = 0;
         this.createDeck();
         this.shuffleDeck();
         this.deal();
@@ -73,12 +77,18 @@ export class SolitaireEngine {
             card.faceUp = true;
             this.waste.push(card);
         } else if (this.waste.length > 0) {
-            // Reciclar: Waste vuelve al Deck (boca abajo y en orden inverso)
+            // Si ya dio el maximo de vueltas, no recical mas
+            if (this.deckPasses >= this.maxPasses){
+                return;
+            }
+            // Reciclar: Waste vuelve al Deck
             while (this.waste.length > 0) {
                 const card = this.waste.pop();
                 card.faceUp = false;
                 this.deck.push(card);
+                
             }
+            this.deckPasses++; // Contar una vuelta mas
         }
     }
 
@@ -203,17 +213,42 @@ export class SolitaireEngine {
         // 1. Check Victory (52 cartas en fundaciones)
         let totalFoundation = 0;
         SUITS.forEach(suit => totalFoundation += this.foundations[suit].length);
+
+        console.log(`Checking Win Condition: ${totalFoundation} / 52 cards collected.`)
+
         if (totalFoundation === 52) return 'WIN';
 
         // 2. Check Defeat (Sin mazo, sin descarte, y sin movimientos en mesa)
-        // Solo declara derrota si NO quedan cartas en el mazo NI en el descarte
-        if (this.deck.length === 0 && this.waste.length === 0) {
-            if (!this.hasAvailableMoves()) {
-                return 'LOSS';
+        if (this.deck.length > 0) return 'PLAYING';
+
+        // Si el mazo esta vacio, PERO se puede reciclar, se sigue jugando.
+        if (this.deckPasses < this.maxPasses) return 'PLAYING';
+
+        // Mazo vacio Y limite de reciclaje alcanzado.
+        // Ahora se debe verificar si esta actualmente trabado el juego
+
+        //A. Se puede mover algo del Tableau?
+        if (this.hasAvailableMoves()) return 'PLAYING';
+
+        //B. Se puede mover la carta TOP del waste?
+        if (this.waste.length > 0) {
+            const topWaste = this.waste[this.waste.length - 1];
+
+            // Chequear si va a Fundations
+            for (let s = 0; s < 4; s++) {
+                if (this._isValidFoundationMove(topWaste, s)) return 'PLAYING';
+            }
+
+            // Chequear si va a Tableau
+            for (let c = 0; c < 7; c++) {
+                const targetCol = this.tableau[c];
+                const targetCard = targetCol[targetCol.length - 1];
+                if (this.isValidTableauMove(topWaste, targetCard)) return 'PLAYING';
             }
         }
 
-        return 'PLAYING'
+        // Si se llega hasta aca: Mazo vacio, Sin reciclaje, Tableau trabado y Waste trabado
+        return 'LOSS';
     }
 
     hasAvailableMoves() {
@@ -222,21 +257,27 @@ export class SolitaireEngine {
             const col = this.tableau[i];
             if (col.length === 0) continue;
 
-            // Revisa la carta tope (y las pilas si quisisera ser exhaustivo,
-            // pero con revisar el tope basta para saber si el juego sigue vivo)
-            const topCard = col[col.length - 1];
+            const firstFaceUpIndex = col.findIndex(c => c.faceUp);
+            if (firstFaceUpIndex === -1) continue;
 
-            // Puede ir a fundaciones?
-            for (let s = 0; s < 4; s++) {
-                if (this._isValidFoundationMove(topCard, s)) return true;
-            }
+            // Revisa cada carta visible
+            for (let k = firstFaceUpIndex; k < col.length; k++) {
+                const cardToCheck = col[k];
 
-            // Puede ir a otra columna ?
-            for (let j = 0; j < 7; j++) {
-                if (i === j) continue;
-                const targetCol = this.tableau[j]
-                const targetCard = targetCol[targetCol.length - 1];
-                if (this.isValidTableauMove(topCard, targetCard)) return true;
+                // Puede ir a otra columna ?
+                for (let j = 0; j < 7; j++) {
+                    if (i === j) continue;
+                    const targetCol = this.tableau[j]
+                    const targetCard = targetCol[targetCol.length - 1];
+                    if (this.isValidTableauMove(cardToCheck, targetCard)) return true;
+                }
+                
+                // B. Se puede subir a fundation? (Solo si es la ultima)
+                if (k === col.length - 1) {
+                    for (let s = 0; s < 4; s++) {
+                        if (this._isValidFoundationMove(cardToCheck, s)) return true;
+                    }
+                }
             }
         }
         return false; // No se encontraron movimientos salvadores

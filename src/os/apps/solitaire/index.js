@@ -30,19 +30,47 @@ export const solitaireApp = {
 
         const board = buildBoard();
 
+        uiRefs.board = board;
+
         // Inicializa listeners de Drag & Drop
         setupDragEvents(board);
         
         // Repartir
-        renderTableau(gameInstance, uiRefs.tableauCols);
-        renderDeck(gameInstance, uiRefs.stockSlot);
-        renderWaste(gameInstance, uiRefs.wasteSlot);
-        renderFoundations(gameInstance, uiRefs.foundationSlots);
+        renderAll();
 
         console.log('Solitaire: Ready & Rendered.')
         return board;
     }
 };
+
+// Renderizado global
+function renderAll() {
+    renderTableau(gameInstance, uiRefs.tableauCols);
+    renderDeck(gameInstance, uiRefs.stockSlot);
+    renderWaste(gameInstance, uiRefs.wasteSlot);
+    renderFoundations(gameInstance, uiRefs.foundationSlots);
+
+    updatePassesUI(gameInstance);
+}
+
+function updatePassesUI(game){
+    if (!uiRefs.passesLabel) return;
+
+    // Calcular cuantas quedan
+    // Usando Math.max para q no muestre negativos x las dudas
+    const remaining = Math.max(0, game.maxPasses - game.deckPasses);
+
+    uiRefs.passesLabel.textContent = `Passes: ${remaining}`;
+
+    // Alerta visual: Rojo si quedan 0
+    if (remaining === 0) {
+        uiRefs.passesLabel.style.color = '#ff5555';
+        uiRefs.passesLabel.style.fontWeight = 'bold';
+    } else{
+        uiRefs.passesLabel.style.color = 'white';
+        uiRefs.passesLabel.style.fontWeight = 'normal';
+    }
+}
 
 // Construccion UI
 function buildBoard() {
@@ -54,9 +82,29 @@ function buildBoard() {
     uiRefs.stockSlot = stockSlot;
     uiRefs.wasteSlot = wasteSlot;
 
+    const passesLabel = mk('div', {
+        text: 'Passes: 3',
+        className: 'passes-label'
+    });
+    // Estilos inline para simplicidad
+    passesLabel.style.color = 'white';
+    passesLabel.style.fontFamily = 'sans-serif';
+    passesLabel.style.fontSize = '12px';
+    passesLabel.style.marginTop = '20px';
+    passesLabel.style.textAlign = 'center';
+    passesLabel.style.textShadow = '1px 1px 0 #000';
+
+    uiRefs.passesLabel = passesLabel; // Guardar referencia
+    const stockWrapper = mk('div', {
+        className: 'stock-wrapper',
+        children: [stockSlot, passesLabel]
+    });
+    stockWrapper.style.display = 'flex';
+    stockWrapper.style.flexDirection = 'column';
+
     const deckArea = mk('div', {
         className: 'deck-area',
-        children: [stockSlot, wasteSlot]
+        children: [stockWrapper, wasteSlot]
     });
 
     // B. Area de fundacinoes
@@ -250,6 +298,8 @@ function setupDragEvents(boardElement) {
             renderDeck(gameInstance, uiRefs.stockSlot);
             renderWaste(gameInstance, uiRefs.wasteSlot);
 
+            updatePassesUI(gameInstance);
+
             checkGameStatus();
         }
     });
@@ -372,9 +422,7 @@ function endDrag(e) {
     }
 
     // Renderizar (o snap back si fallo)
-    renderTableau(gameInstance, uiRefs.tableauCols);
-    renderFoundations(gameInstance, uiRefs.foundationSlots);
-    renderWaste(gameInstance, uiRefs.wasteSlot); // Refrescar waste tambien
+    renderAll();
 
     dragState.cards = [];
 

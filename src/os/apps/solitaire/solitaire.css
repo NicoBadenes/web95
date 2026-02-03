@@ -15,7 +15,7 @@
 .top-section{
     display: flex;
     justify-content: space-between;
-    height: 110px; /* Altura para cartas */
+    height: 120px; /* Altura para cartas */
     margin-bottom: 20px;
 }
 
