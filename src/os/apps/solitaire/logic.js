@@ -196,4 +196,50 @@ export class SolitaireEngine {
         if (pile.length === 0) return card.rank === 'A';
         return card.value === pile[pile.length - 1].value + 1;
     }
+
+    // Estado del juego
+
+    checkGameState() {
+        // 1. Check Victory (52 cartas en fundaciones)
+        let totalFoundation = 0;
+        SUITS.forEach(suit => totalFoundation += this.foundations[suit].length);
+        if (totalFoundation === 52) return 'WIN';
+
+        // 2. Check Defeat (Sin mazo, sin descarte, y sin movimientos en mesa)
+        // Solo declara derrota si NO quedan cartas en el mazo NI en el descarte
+        if (this.deck.length === 0 && this.waste.length === 0) {
+            if (!this.hasAvailableMoves()) {
+                return 'LOSS';
+            }
+        }
+
+        return 'PLAYING'
+    }
+
+    hasAvailableMoves() {
+        // Revisa si alguna carta visible del tableau se puede mover
+        for (let i = 0; i < 7; i++) {
+            const col = this.tableau[i];
+            if (col.length === 0) continue;
+
+            // Revisa la carta tope (y las pilas si quisisera ser exhaustivo,
+            // pero con revisar el tope basta para saber si el juego sigue vivo)
+            const topCard = col[col.length - 1];
+
+            // Puede ir a fundaciones?
+            for (let s = 0; s < 4; s++) {
+                if (this._isValidFoundationMove(topCard, s)) return true;
+            }
+
+            // Puede ir a otra columna ?
+            for (let j = 0; j < 7; j++) {
+                if (i === j) continue;
+                const targetCol = this.tableau[j]
+                const targetCard = targetCol[targetCol.length - 1];
+                if (this.isValidTableauMove(topCard, targetCard)) return true;
+            }
+        }
+        return false; // No se encontraron movimientos salvadores
+    }
 }
+

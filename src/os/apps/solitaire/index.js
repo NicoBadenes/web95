@@ -249,6 +249,8 @@ function setupDragEvents(boardElement) {
             gameInstance.drawCard();
             renderDeck(gameInstance, uiRefs.stockSlot);
             renderWaste(gameInstance, uiRefs.wasteSlot);
+
+            checkGameStatus();
         }
     });
 
@@ -375,6 +377,10 @@ function endDrag(e) {
     renderWaste(gameInstance, uiRefs.wasteSlot); // Refrescar waste tambien
 
     dragState.cards = [];
+
+    if (moveSuccessful) {
+        checkGameStatus();
+    }
 }
 
 /**
@@ -399,4 +405,53 @@ function getDropTarget(x, y) {
     }
 
     return null;
+}
+
+// WIn / Lost system
+
+function checkGameStatus() {
+    const status = gameInstance.checkGameState();
+
+    if (status === 'WIN') {
+        showModal('Victory!', 'Congratulations! You have won.');
+    } else if (status === 'LOSS') {
+        showModal('Game Over', 'No more moves available.');
+    }
+}
+
+function showModal(title, message) {
+    if (document.querySelector('.solitaire-modal-overlay')) return;
+
+    const overlay = mk('div', { className: 'solitaire-modal-overlay' });
+    const modal = mk('div', { className: 'solitaire-modal' });
+
+    const header = mk('div', { className: 'modal-header', text: title });
+    const body = mk('div', { className: 'modal-body', text: message });
+
+    const btn = mk('button', {
+        className: 'modal-btn',
+        text: 'Play Again',
+        events: {
+            click: () => {
+                restartGame();
+                overlay.remove();
+            }
+        }
+    });
+
+    body.appendChild(mk('br', {}));
+    body.appendChild(btn);
+
+    modal.appendChild(header);
+    modal.appendChild(body);
+    overlay.appendChild(modal);
+
+    uiRefs.board.appendChild(overlay);
+}
+
+function restartGame() {
+    gameInstance = new SolitaireEngine();
+    gameInstance.initGame();
+    renderAll();
+    console.log('Game Restarted');
 }
