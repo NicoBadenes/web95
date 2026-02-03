@@ -81,8 +81,9 @@ class StartMenu {
                     wm.open({
                         id: 'solitaire',
                         title: 'Solitaire',
-                        w: 600, h: 450,
-                        content: solitaireApp.run()
+                        w: 600, h: 660,
+                        content: solitaireApp.run(),
+                        fixedSize: true
                     });
                 }
             },

@@ -39,26 +39,17 @@
 
 /* --- La Carta --- */
 .card {
-    width: 70px;
-    height: 95px;
-    background-color: white;
-    border-radius: 4px;
-    border: 1px solid #000;
+    position: absolute;
+    width: 71px;
+    height: 96px;
+    border-radius: 0;
+    box-sizing: border-box;
+    background-color: transparent;
+    border: none;
+}
 
-    box-shadow: 1px 1px 1px rgba(0,0,0,0.5);
-
-    position: absolute; /*para apilarlas*/
-
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 2px;
-
-    font-family: 'Courier New', Courier, monospace;
-    font-weight: bold;
-    font-size: 16px;
-    user-select: none;
-    cursor: grab;
+.card:hover {
+    filter: brightness(1.1);
 }
 
 .card.red { color: red; }

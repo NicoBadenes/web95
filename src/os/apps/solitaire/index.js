@@ -139,9 +139,17 @@ function renderDeck(game, slotDOM) {
     if (!slotDOM) return;
     slotDOM.innerHTML = '';
 
-    // Si quedan cartas, dibuja el dorso
     if (game.deck.length > 0) {
-        slotDOM.appendChild(mk('div', { className: ['card', 'back'] }));
+        // Crea div manual con el estilo del dorso
+        const deckCard = mk('div', { className: ['card', 'back'] });
+        deckCard.style.backgroundImage = `url(${SPRITE_CONFIG.url})`;
+        deckCard.style.backgroundRepeat = 'no-repeat';
+
+        // Coordenadas del dorso (mismas que en createCardElement)
+        const backY = 4 * SPRITE_CONFIG.height;
+        deckCard.style.backgroundPosition = `0px -${backY}px`;
+
+        slotDOM.appendChild(deckCard);
     }
 }
 
@@ -187,24 +195,46 @@ function renderFoundations(game, slotsDOM) {
     });
 }
 
+// Config del sprite
+const SPRITE_CONFIG = {
+    url: 'src/os/apps/solitaire/cards.png',
+    width: 71,
+    height: 96,
+    suitOrder: ['♠', '♥', '♣', '♦']
+};
+
 function createCardElement(card) {
     const el = mk('div', { className: 'card' });
 
+    // Imagen base
+    el.style.backgroundImage = `url(${SPRITE_CONFIG.url})`;
+    el.style.backgroundRepeat = 'no-repeat';
+
     if (!card.faceUp) {
+        // Carta boca abajo
+        const backX = 0;
+        const backY = 4 * SPRITE_CONFIG.height; // Fila 4
+        
+        el.style.backgroundPosition = `-${backX}px -${backY}px`;
         el.classList.add('back');
         return el;
     }
 
+    // Carta boca arriba
+    // 1. Calcular X basado en el numero (A, 2, 3...)
+    const rankIndex = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'].indexOf(card.rank);
+    const x = rankIndex * SPRITE_CONFIG.width;
+
+    // 2. Calcular Y basado en el palo
+    const suitIndex = SPRITE_CONFIG.suitOrder.indexOf(card.suit);
+    const y = suitIndex * SPRITE_CONFIG.height;
+
+    // Mover la imagen para mostrar slo ese pedazo
+    el.style.backgroundPosition = `-${x}px -${y}px`;
+
+    // debug
     el.classList.add(card.color);
 
-    // Contenido visual
-    const topCorner = mk('div', { className: 'corner-top', text: `${card.rank} ${card.suit}` });
-    const bottomCorner = mk('div', { className: 'corner-bottom', text: `${card.rank} ${card.suit}` });
-    const center = mk('div', { className: 'card-center', text: card.suit, style: 'font-size: 40px; text-align: center; margin-top: 10px;' });
-
-    el.appendChild(topCorner);
-    el.appendChild(center);
-    el.appendChild(bottomCorner);
     return el;
 }
 
