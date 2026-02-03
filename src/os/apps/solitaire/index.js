@@ -21,12 +21,23 @@ let dragState = {
     initialPositions: []  // Para el "Snap back" 
 };
 
+// Estado del timer
+let timerState = {
+    isRunning: false,
+    startTime: 0,
+    elapsedSeconds: 0,
+    intervalId: null,
+    hasInteracted: false 
+};
+
 export const solitaireApp = {
     run() {
         loadCSS('solitaire-css', 'src/os/apps/solitaire/solitaire.css');
 
         gameInstance = new SolitaireEngine();
         gameInstance.initGame();
+
+        resetTimerState();
 
         const board = buildBoard();
 
@@ -37,6 +48,8 @@ export const solitaireApp = {
         
         // Repartir
         renderAll();
+
+        loadBestTime();
 
         console.log('Solitaire: Ready & Rendered.')
         return board;
@@ -74,6 +87,19 @@ function updatePassesUI(game){
 
 // Construccion UI
 function buildBoard() {
+    // Barra de estadisticas
+    const timeLabel = mk('div', { text: 'TIME: 00:00', attributes: { id: 'timer-display' } });
+    const bestLabel = mk('div', { text: 'BEST: --:--', attributes: { id: 'best-display' } });
+
+    // GUardar referencias
+    uiRefs.timeLabel = timeLabel;
+    uiRefs.bestLabel = bestLabel;
+
+    const statsBar = mk('div', {
+        className: 'stats-bar',
+        children: [timeLabel, bestLabel]
+    });
+
     //A. Area del mazo (Guarda referencias explicitas)
     const stockSlot = mk('div', { className: 'slot', attributes: { id: 'stock-slot' } });
     const wasteSlot = mk('div', { className: 'slot', attributes: { id: 'waste-slot '} });
@@ -157,8 +183,78 @@ function buildBoard() {
 
     return mk('div', {
         className: 'solitaire-board',
-        children: [topSection, tableauArea]
+        children: [statsBar, topSection, tableauArea]
     });
+}
+
+// Timer functions
+function resetTimerState() {
+    stopTimer();
+    timerState = {
+        isRunning: false,
+        startTime: 0,
+        elapsedSeconds: 0,
+        intervalId: null,
+        hasInteracted: false
+    };
+    if (uiRefs.timeLabel) uiRefs.timeLabel.textContent = 'TIME: 00:00';
+}
+
+function startTimer() {
+    if (timerState.isRunning) return;
+
+    timerState.isRunning = true;
+    timerState.startTime = Date.now();
+
+    timerState.intervalId = setInterval(() => {
+        timerState.elapsedSeconds++;
+        const formatted = formatTime(timerState.elapsedSeconds);
+        if (uiRefs.timeLabel) uiRefs.timeLabel.textContent = `TIME: ${formatted}`;
+    }, 1000);
+}
+
+function stopTimer() {
+    if (timerState.intervalId) {
+        clearInterval(timerState.intervalId);
+        timerState.intervalId = null;
+    }
+    timerState.isRunning = false;
+}
+
+function formatTime(seconds) {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+}
+
+function handleFirstInteraction(){
+    if (!timerState.hasInteracted) {
+        timerState.hasInteracted = true;
+        startTimer();
+    }
+}
+
+// Local st - best time
+
+function loadBestTime() {
+    const saved = localStorage.getItem('solitaire_best_time');
+    if (saved) {
+        uiRefs.bestLabel.textContent = `BEST: ${formatTime(parseInt(saved))}`;
+    } else{
+        uiRefs.bestLabel.textContent = `BEST: --:--`;
+    }
+}
+
+function savedBestTimeIfNewRecord(seconds) {
+    const currentBest = localStorage.getItem('solitaire_best_time');
+
+    // Si no hay record, o el nuevo tiempo es menor (mejor)
+    if (!currentBest || seconds < parseInt(currentBest)) {
+        localStorage.setItem('solitaire_best_time', seconds.toString());
+        uiRefs.bestLabel.textContent = `BEST: ${formatTime(seconds)}`;
+        return true; // Nuevo record
+    }
+    return false;
 }
 
 // Renderizado
@@ -292,6 +388,8 @@ function setupDragEvents(boardElement) {
     // Click en el mazo
     // Usando el ID stock-slot para detectar clicks en el mazo
     boardElement.addEventListener('click', (e) => {
+        handleFirstInteraction(); 
+
         // Si clickeo en el mazo..
         if (e.target.id === 'stock-slot' || e.target.closest('#stock-slot')) {
             gameInstance.drawCard();
@@ -306,6 +404,7 @@ function setupDragEvents(boardElement) {
 
     // Mousedown: aggarra carta(s)
     boardElement.addEventListener('mousedown', (e) => {
+        handleFirstInteraction(); // Detecta el primer clck para el timer
         const cardEl = e.target.closest('.card');
         // Solo arrastra si es carta, no esta boca abajo, y no esta ya arrastrando
         if (!cardEl || cardEl.classList.contains('back') || dragState.isDragging) return;
@@ -461,8 +560,19 @@ function checkGameStatus() {
     const status = gameInstance.checkGameState();
 
     if (status === 'WIN') {
+        stopTimer();
+
+        const isNewRecord = savedBestTimeIfNewRecord(timerState.elapsedSeconds);
+        const timeText = formatTime(timerState.elapsedSeconds);
+
+        const msg = isNewRecord
+            ? `NEW RECORD! Time: ${timeText}`
+            : `Time: ${timeText}`;
+
         showModal('Victory!', 'Congratulations! You have won.');
+    
     } else if (status === 'LOSS') {
+        stopTimer();
         showModal('Game Over', 'No more moves available.');
     }
 }
@@ -500,6 +610,7 @@ function showModal(title, message) {
 function restartGame() {
     gameInstance = new SolitaireEngine();
     gameInstance.initGame();
+    resetTimerState();
     renderAll();
     console.log('Game Restarted');
 }
