@@ -253,14 +253,19 @@ class Desktop{
      */
     makeDraggable(element) {
         let isDragging = false;
-        let startX, startY, initialLeft, initialTop;
+        let startX, startY;
+        let dragGroup = [];
 
         const onMouseMove = (e) => {
             if (!isDragging) return;
             const dx = e.clientX - startX;
             const dy = e.clientY - startY;
-            element.style.left = `${initialLeft + dx}px`;
-            element.style.top = `${initialTop + dy}px`;
+
+            // Aplicar mismo desplazamiento a tds los elmentos del grupo
+            dragGroup.forEach(item => {
+                item.el.style.left = `${item.initialL + dx}px`;
+                item.el.style.top = `${item.initialT + dy}px`;
+            })
         }
 
         const onMouseUp = () => {
@@ -268,61 +273,82 @@ class Desktop{
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
 
-            //1. Calcular grilla
-            const rawLeft = parseInt(element.style.left) || 0;
-            const rawTop = parseInt(element.style.top) || 0;
+            //1. Calcular grilla para cada icono del grupo individualmente
+            dragGroup.forEach(item => {
+                const el = item.el;
+                const rawLeft = parseInt(el.style.left) || 0;
+                const rawTop = parseInt(el.style.top) || 0;
 
-            let col = Math.round((rawLeft - this.MARGIN_X) / this.GRID_W);
-            let row = Math.round((rawTop - this.MARGIN_Y) / this.GRID_H);
+                let col = Math.round((rawLeft - this.MARGIN_X) / this.GRID_W);
+                let row = Math.round((rawTop - this.MARGIN_Y) / this.GRID_H);
 
-            if(col < 0) col = 0;
-            if(row < 0) row = 0;
+                if(col < 0) col = 0;
+                if(row < 0) row = 0;
 
-            let snapLeft = this.MARGIN_X + (col * this.GRID_W);
-            let snapTop = this.MARGIN_Y + (row * this.GRID_H);
+                let snapLeft = this.MARGIN_X + (col * this.GRID_W);
+                let snapTop = this.MARGIN_Y + (row * this.GRID_H);
 
-            // 2. Limites
-            const maxLeft = window.innerWidth - this.GRID_W;
-            const maxTop = window.innerHeight - 40 - this.GRID_H;
+                // 2. Limites
+                const maxLeft = window.innerWidth - this.GRID_W;
+                const maxTop = window.innerHeight - 40 - this.GRID_H;
 
-            if (snapLeft > maxLeft) snapLeft = this.MARGIN_X + (Math.floor((maxLeft - this.MARGIN_X) / this.GRID_W) * this.GRID_W);
-            if (snapTop > maxTop) snapTop = this.MARGIN_Y + (Math.floor((maxTop - this.MARGIN_Y) / this.GRID_H) * this.GRID_H);
-        
-            // 3. Colisiones
-            if (this.isSlotOccupied(snapLeft, snapTop, element)) {
-                console.log("Bouncing by colission");
-                snapLeft = initialLeft;
-                snapTop = initialTop;
-            }    
+                if (snapLeft > maxLeft) snapLeft = this.MARGIN_X + (Math.floor((maxLeft - this.MARGIN_X) / this.GRID_W) * this.GRID_W);
+                if (snapTop > maxTop) snapTop = this.MARGIN_Y + (Math.floor((maxTop - this.MARGIN_Y) / this.GRID_H) * this.GRID_H);
 
-            //4. Aplicar visualmente
-            element.style.transition = 'top 0.2s, left 0.2s';
-            element.style.left = `${snapLeft}px`;
-            element.style.top = `${snapTop}px`;
+                // 3. Colisiones
+                if (this.isSlotOccupied(snapLeft, snapTop, el)) {
+                    console.log("Bouncing by colission");
+                    snapLeft = item.initialL;
+                    snapTop = item.initialT;
+                }    
 
-            //5. Guardar en disco duro
-            const filename = element.getAttribute('data-path');
+                //4. Aplicar visualmente
+                el.style.transition = 'top 0.2s, left 0.2s';
+                el.style.left = `${snapLeft}px`;
+                el.style.top = `${snapTop}px`;
 
-            // Llama a la nueva funcion de VFS
-            fs.updateMeta(filename, {
-                pos: { x: snapLeft, y: snapTop}
+                //5. Guardar en disco duro
+                const filename = element.getAttribute('data-path');
+
+                // Llama a la nueva funcion de VFS
+                fs.updateMeta(filename, {
+                    pos: { x: snapLeft, y: snapTop}
+                });
+
+                setTimeout(() => { 
+                    el.style.transition = 'none';
+                    element.style.zIndex = '';
+                }, 200);                
             });
-
-            setTimeout(() => { element.style.transition = 'none';}, 200);
-            element.style.zIndex = '';
         };
 
         element.addEventListener('mousedown', (e) => {
             if (e.button !== 0) return;
-            e.stopPropagation();
-            isDragging = true;
-            element.style.transition = 'none';
-            element.style.zIndex = 100;
+            // Si el icono que se quiere arrastrar no es parte del grupo, 
+            // se deselecciona el grupo y se arrastra solo ese icono
+            if (!element.classList.contains('selected')) {
+                // Solo deselecciona si NO esta intentando una multiseleccion
+                if (!e.ctrlKey && !e.shiftKey) {
+                    this.deselectAll();
+                    element.classList.add('selected');
+                    this.selectedIcon = element;
+                }   
+            }
 
+            isDragging = true;
             startX = e.clientX;
             startY = e.clientY;
-            initialLeft = element.offsetLeft;
-            initialTop = element.offsetTop;
+
+            const selectedIcons = Array.from(this.iconsContainer.querySelectorAll('.selected'));
+            dragGroup = selectedIcons.map(el => {
+                el.style.transition = 'none';
+                el.style.zIndex = 100;
+                return {
+                    el: el,
+                    initialL: el.offsetLeft,
+                    initialT: el.offsetTop
+                };
+            });
 
             window.addEventListener('mousemove', onMouseMove);
             window.addEventListener('mouseup', onMouseUp);
