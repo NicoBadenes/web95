@@ -22,7 +22,11 @@ class ContextMenu {
         });
 
         // Click izquierdo cierra el menu
-        document.addEventListener('click', () => this.close());
+        document.addEventListener('mousedown', (e) => {
+            if (!e.target.closest('.context-menu')) {
+                this.close();
+            }
+        });
     }
 
     close() {
@@ -119,8 +123,17 @@ class ContextMenu {
         }
     }
 
-    render(x, y, items) {
-        const menu = mk('div', { className: 'context-menu' });
+    render(x, y, items, isSubmenu = false) {
+        if (!isSubmenu) this.close();
+
+        const menu = mk('div', {
+            className: 'context-menu',
+            style: `left: ${x}px; top: ${y}px; visibility: hidden;`
+        });
+
+        menu.addEventListener('mouseenter', () => {
+            if (isSubmenu) this.keepSubmenuOpen = true;
+        });
 
         items.forEach(item => {
             if (item.separator) {
@@ -131,51 +144,56 @@ class ContextMenu {
                     text: item.label,
                     events: {
                         click: (e) => {
+                            if(item.submenu) return e.stopPropagation();
                             e.stopPropagation();
                             this.close();
-                            if (!item.disabled) item.action();
+                            if (!item.disabled && item.action) item.action();
+                        },
+                        mouseenter: () => {
+                            if (item.submenu) {
+                                const rect = row.getBoundingClientRect();
+                                this.renderSubmenu(rect.right, rect.top, item.submenu, menu);
+                            } else if (!isSubmenu){
+                                this.closeSubmenu();
+                            }
                         }
                     }
                 });
 
-                // Soporte visual apra items deshabilitados (por si lo necsito despues)
+                // Soporte visual apra items deshabilitados
                 if (item.disabled) row.classList.add('disabled');
 
                 menu.appendChild(row);
             }
         });
 
-        // 1. Inyectar primero para poder leer sus dimensiones reales
-        // (Usando visibility hidden para que no parpadee en la posicion incorrecta si fuera lento)
-        menu.style.visibility = 'hidden';
         document.body.appendChild(menu);
 
-        // 2. Calcular dimensiones y limites
+        // Calcular dimensiones y limites
         const menuRect = menu.getBoundingClientRect();
         const winWidth   = window.innerWidth;
         const winHeight = window.innerHeight;
         
         let finalX = x;
-        let finalY = y;
-
-        // COLISION VERTICAL (Abajo)
-        if (y + menuRect.height > winHeight) {
-            // Si no entra abajo, se muestra arriba del cursor
-            finalY = y - menuRect.height;
-        }
-
         // COLISION HORIZONTAL (Derecha)
-        if (x + menuRect.width > winWidth) {
-            // Si no entra a la derecha, se muestra a la izquierda del cursor
-            finalX = x - menuRect.width;
+        if (x + menuRect.width > window.innerWidth) {
+            finalX = isSubmenu ? x - menuRect.width - (parentMenu ? parentMenu.offsetWidth : 0) : x - menuRect.width;
+        }
+        
+        let finalY = y;
+        // COLISION VERTICAL (Abajo)
+        if (y + menuRect.height > window.innerHeight) {
+            finalY = window.innerHeight - menuRect.height - 5;
         }
 
-        // 3. Aplicar coordenadas finales y mostrar
+        // Aplicar coordenadas finales y mostrar
         menu.style.left = `${finalX}px`;
         menu.style.top = `${finalY}px`;
         menu.style.visibility = 'visible';
 
-        this.activeMenu = menu;
+        if (!isSubmenu) this.activeMenu = menu;
+
+        return menu;
     }
 
     // --- ACCIONES DEL SISTEMA ---
@@ -259,6 +277,38 @@ class ContextMenu {
             } catch(err) {
                 alert(err.message);
             }
+        }
+    }
+
+    renderSubmenu(x, y, items, parentMenu) {
+        this.closeSubmenu(); // Cerrar si hay uno viejo
+
+        const submenuX = x + 7;
+
+        // Mismo render pero como submenu
+        const submenu = this.render(submenuX, y, items, true);
+        this.activeSubmenu = submenu;
+
+        // Vincularlo al padre para q no se borre por error
+        submenu.classList.add('submenu-floating');
+
+        // Guardar la referencia en el padre para limpieza recursiva
+        parentMenu.dataset.hasActiveSubmenu = "true";
+    }
+
+    closeSubmenu(){
+        if (this.activeSubmenu) {
+            this.activeSubmenu.remove();
+            this.activeSubmenu = null;
+        }
+    }
+
+    // Actualiza la funcion close existente para q tmb cierre submenus
+    close() {
+        this.closeSubmenu();
+        if (this.activeMenu) {
+            this.activeMenu.remove();
+            this.activeMenu = null;
         }
     }
 }
