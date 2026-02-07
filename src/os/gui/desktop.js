@@ -135,7 +135,21 @@ class Desktop{
                 //Click Simple: Seleccionar
                 click: (e) => {
                     e.stopPropagation();
-                    this.selectIcon(iconNode);
+
+                    if (e.ctrlKey) {
+                        // ctrl: Alternar seleccion individual
+                        iconNode.classList.toggle('selected');
+                        // Si se selecciono, se marca como el ultimo para el shift
+                        if (iconNode.classList.contains('selected')) this.selectedIcon = iconNode;
+                    } else if (e.shiftKey && this.selectedIcon) {
+                        // shift: Seleccionar rango (basado en el orden del DOM)
+                        this.selectRange(this.selectedIcon, iconNode);
+                    } else {
+                        // normal: Deseleccionar todo y seleccionar el actual
+                        this.deselectAll();
+                        iconNode.classList.add('selected');
+                        this.selectedIcon = iconNode;
+                    };
                 },
                 //Doble click: abrir
                 dblclick: () => {
@@ -148,12 +162,6 @@ class Desktop{
         this.iconsContainer.appendChild(iconNode);
     }
 
-    selectIcon(node) {
-        this.deselectAll(); //Quitar seleccion a otros
-        node.classList.add('selected');
-        this.selectedIcon = node;
-    }
-
     /**
      * Deveulve una lista con los 'data-pathd de todos los iconos seleccionados.      
     */
@@ -163,10 +171,9 @@ class Desktop{
     }
 
     deselectAll(){
-        if (this.selectedIcon){
-            this.selectedIcon.classList.remove('selected');
-            this.selectedIcon = null;
-        }
+        const selected = this.iconsContainer.querySelectorAll('.selected');
+        selected.forEach(el => el.classList.remove('selected'));
+        this.selectedIcon = null;
     }
 
     /**
@@ -407,6 +414,19 @@ class Desktop{
                 icon.classList.remove('selected');
             }
         });
+    }
+
+    selectRange(startNode, endNode) {
+        const allIcons = Array.from(this.iconsContainer.children);
+        const startIndex = allIcons.indexOf(startNode);
+        const endIndex = allIcons.indexOf(endNode);
+
+        const start = Math.min(startIndex, endIndex);
+        const end = Math.max(startIndex, endIndex);
+
+        for (let i = start; i <= end; i++) {
+            allIcons[i].classList.add('selected');
+        }
     }
 }
 

@@ -44,10 +44,7 @@ class ContextMenu {
 
         // Caso 1: Click en un ICONO del escritorio
         const iconElement = target.closest('.desktop-icon');
-        
         if (iconElement) {
-            const clickPath = iconElement.getAttribute('data-path');
-
             // Logica de Seleccion Inteligente
             // Si le das click derecho a alog que NO esta seleccionado
             // asume que queres seleccioanr SOLO eso y olvidar el resto.
