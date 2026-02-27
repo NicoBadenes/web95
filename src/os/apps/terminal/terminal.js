@@ -27,6 +27,10 @@ class TerminalApp {
      * Inicializa y renderiza la interfaz.
      */
     run() {
+        // Reset de sesion
+        this.currentPath = [];
+        this.historyIndex = this.cmdHistory.length; // Resetea el puntero del historial, pero mantiene comandos previos
+        
         // 1. Contenedor de salida (Log)
         this.outputElement = mk('div', { className: 'terminal-output' });
 
