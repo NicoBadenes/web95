@@ -7,7 +7,7 @@ import { mk, $ } from '../../utils/dom.js';
 import { wm } from '../gui/window-manager.js';
 import { desktop } from '../gui/desktop.js';
 import { fs } from '../../filesystem/vfs.js';
-import { terminal } from '../apps/terminal.js';
+import { terminal } from '../apps/terminal/terminal.js';
 import { snakeGame } from '../apps/snake.js';
 import { calculator } from '../apps/calculator.js';
 import { browser } from '../apps/browser.js';
@@ -110,7 +110,7 @@ class StartMenu {
                     wm.open({
                         id: 'cmd-prompt',
                         title: 'MS-DOS Prompt',
-                        w: 500, h: 300,
+                        w: 600, h: 400,
                         content: termContent
                     });
                 }

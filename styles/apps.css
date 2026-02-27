@@ -55,29 +55,52 @@
     font-size: 14px;
     padding: 5px;
     height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+    display: block;
     cursor: text;
 }
 
-/*  Area donde aparece el historial de lo escrito (ni idea el nombre) */
+.app-terminal::-webkit-scrollbar {
+    width: 16px;
+}
+
+.app-terminal::-webkit-scrollbar-track{
+    background: #dfdfdf;
+    border-left: 1px solid white;
+}
+
+.app-terminal::-webkit-scrollbar-thumb{
+    background-color: #c0c0c0;
+    border: 2px solid;
+    border-color: #fff #808080 #808080 #fff;
+}
+
+.app-terminal::-webkit-scrollbar-button {
+    background-color: #c0c0c0;
+    width: 16px;
+    height: 16px;
+    border: 2px solid;
+    border-color: #fff #808080 #808080 #fff;
+    display: block;
+}
+
+/*  Area de historial */
 .terminal-output {
-    flex-grow: 1;
-    overflow-y: auto;
     white-space: pre-wrap;
-    margin-bottom: 5px;
+    margin-bottom: 2px;
 }
 
 /* Input line */
 .terminal-input-line {
     display: flex;
     align-items: center;
+    width: 100%;
 }
 
 .terminal-prompt {
     color: #c0c0c0;
-    margin-right: 5px;
+    margin-right: 2px;
+    white-space: pre;
 }
 
 .terminal-input{
@@ -86,7 +109,9 @@
     color: #fff;
     font-family: inherit;
     font-size: inherit;
+    font-weight: bold;
     flex-grow: 1;
     outline: none;
-    caret-color: #fff;
+    margin: 0;
+    padding: 0;
 }
