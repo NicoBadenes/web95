@@ -115,34 +115,43 @@ class TerminalApp {
 
         if (!target) return; // Si vacio no hace nada
 
+        let matches = [];
+
+        // Buscar en comandos
+        if (args.length === 0) {
+            const commands = Object.keys(COMMAND_REGISTRY);
+            const cmdMatches = commands.filter(cmd => cmd.toLowerCase().startsWith(target.toLowerCase()));
+            matches = matches.concat(cmdMatches);
+        }
+
         // Buscar en el directorio actual
         const pathStr = this.currentPath.join('/');
         try {
             const files = fs.dir(pathStr);
-
-            // Filtrar archivos/carpetas que impiecen con lo escrito
-            const matches = files.filter(f => f.toLowerCase().startsWith(target.toLowerCase()));
-            
-            if (matches.length === 1) {
-                // Hay *1* match, se completa
-                args.push(matches[0]);
-                this.inputElement.value = args.join(' ');
-            } else if (matches.length > 1) {
-                // Hay mas de una opcion, las lista
-                this.print(matches.join('   '), '#00ffff');
-
-                // Imprime el prompt y el comando actual en el historial
-                const oldPrompt = mk('span', { className: 'terminal-prompt', text: this.getPromptString() });
-                const oldCommand = mk('span', { text: rawInput, style: 'color: #fff; font-weight: bold;' });
-                this.outputElement.appendChild(mk('div', { children: [oldPrompt, oldCommand] }));
-                
-                // Imprime las opciones disponibles
-                this.print(matches.join('   '), '#00ffff');
-
-                this.scrollToBottom();
-            }
+            const fileMatches = files.filter(f => f.toLowerCase().startsWith(target.toLowerCase()));
+            matches = matches.concat(fileMatches);
         } catch (e) {
-            console.warn("Tab completion error:", (e));
+            console.warn("Tab completion error:", e);
+        }
+
+        // Eliminar duplicados
+        matches = [...new Set(matches)];
+            
+        // Procesar resultados
+        if (matches.length === 1) {
+            // Hay *1* match, se completa
+            args.push(matches[0]);
+            this.inputElement.value = args.join(' ') + ' ';
+        } else if (matches.length > 1) {
+            // Imprime el prompt y el comando actual en el historial
+            const oldPrompt = mk('span', { className: 'terminal-prompt', text: this.getPromptString() });
+            const oldCommand = mk('span', { text: rawInput, style: 'color: #fff; font-weight: bold;' });
+            this.outputElement.appendChild(mk('div', { children: [oldPrompt, oldCommand] }));
+            
+            // Imprime las opciones disponibles
+            this.print(matches.join('   '), '#00ffff');
+
+            this.scrollToBottom();
         }
     }
 
