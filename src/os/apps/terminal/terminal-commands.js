@@ -9,6 +9,7 @@
  */
 
 import { fs } from '../../../filesystem/vfs.js';
+import { desktop } from '../../gui/desktop.js';
 
 // Utilidades privadas
 
@@ -156,6 +157,7 @@ export const COMMAND_REGISTRY = {
 
         try {
             fs.mkdir(fullPath);
+            desktop.render(); // Actualiza escritorio inmediatamente
             ctx.print(`Directory created.`);
         } catch (e) {
             ctx.print(`Error: ${e.message}`, '#ff5555');
@@ -177,6 +179,7 @@ export const COMMAND_REGISTRY = {
             if (fullPath === '') throw new Error("Cannot delete root directory.");
 
             fs.delete(fullPath);
+            desktop.render(); // Actualiza escritorio inmediatamente
             ctx.print(`Delete: ${targetPath}`);
         } catch (e) {
             ctx.print(`Error: ${e.message}`, '#ff5555');
