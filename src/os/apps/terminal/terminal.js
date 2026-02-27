@@ -6,6 +6,7 @@
 
 import { mk } from '../../../utils/dom.js';
 import { COMMAND_REGISTRY } from './terminal-commands.js';
+import { fs } from '../../../filesystem/vfs.js';
 
 class TerminalApp {
     constructor() {
@@ -30,7 +31,7 @@ class TerminalApp {
         // Reset de sesion
         this.currentPath = [];
         this.historyIndex = this.cmdHistory.length; // Resetea el puntero del historial, pero mantiene comandos previos
-        
+
         // 1. Contenedor de salida (Log)
         this.outputElement = mk('div', { className: 'terminal-output' });
 
@@ -100,8 +101,48 @@ class TerminalApp {
             this.navigateHistory('down');
         } else if (e.key === 'Tab') {
             e.preventDefault();
-            // TODO: Implementar Autocompletado
-            console.log('Tab completion not implemented yet');
+            this.handleTabCompletion();
+        }
+    }
+
+    /**
+     * Autocomplete de comandos y rutas
+     */
+    handleTabCompletion() {
+        const rawInput = this.inputElement.value;
+        const args = rawInput.split(' ');
+        const target = args.pop();
+
+        if (!target) return; // Si vacio no hace nada
+
+        // Buscar en el directorio actual
+        const pathStr = this.currentPath.join('/');
+        try {
+            const files = fs.dir(pathStr);
+
+            // Filtrar archivos/carpetas que impiecen con lo escrito
+            const matches = files.filter(f => f.toLowerCase().startsWith(target.toLowerCase()));
+            
+            if (matches.length === 1) {
+                // Hay *1* match, se completa
+                args.push(matches[0]);
+                this.inputElement.value = args.join(' ');
+            } else if (matches.length > 1) {
+                // Hay mas de una opcion, las lista
+                this.print(matches.join('   '), '#00ffff');
+
+                // Imprime el prompt y el comando actual en el historial
+                const oldPrompt = mk('span', { className: 'terminal-prompt', text: this.getPromptString() });
+                const oldCommand = mk('span', { text: rawInput, style: 'color: #fff; font-weight: bold;' });
+                this.outputElement.appendChild(mk('div', { children: [oldPrompt, oldCommand] }));
+                
+                // Imprime las opciones disponibles
+                this.print(matches.join('   '), '#00ffff');
+
+                this.scrollToBottom();
+            }
+        } catch (e) {
+            console.warn("Tab completion error:", (e));
         }
     }
 
@@ -157,7 +198,7 @@ class TerminalApp {
                 clear: () => {
                     this.outputElement.innerHTML = '';
                     // // // // / // // // // // // // // // 
-                    this.printHeader();k
+                    this.printHeader();
                 },
                 currentPath: this.currentPath,
                 updatePath: (newStack) => {
