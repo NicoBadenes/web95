@@ -20,10 +20,10 @@ class StartMenu {
     }
 
     init() {
-        //1. Crear la estructura
+        // Crear la estructura
         this.element = mk('div', { id: 'start-menu' });
 
-        //2. Franja lateral "Web95"
+        // Franja lateral "Web95"
         const sideBanner = mk('div', {
             className: 'start-side-banner',
             children: [
@@ -31,14 +31,13 @@ class StartMenu {
             ]
         });
 
-        // 3. Opciones del menu
+        // Opciones del menu
         const optionsContainer = mk('div', { className: 'start-options' });
 
         const items = [
             {
                 icon: '📁', label: 'Documents',
                 action: () => {
-                    //Abre la carpeta root/documents
                     const docsNode = fs.resolve('documents');
                     desktop.openFileOrFolder('documents', docsNode);
                 }
@@ -51,12 +50,12 @@ class StartMenu {
             },
 
             {
-                icon: '🌐', label: 'Internet Explorer', // O "Netscape", o inventar un nombre proximamente
+                icon: '🌐', label: 'Internet Explorer',
                 action: () => {
                     wm.open({
                         id: 'browser',
                         title: 'Internet Explorer',
-                        w: 800, h: 600, // Tama;o de ventana grande
+                        w: 800, h: 600,
                         content: browser.run()
                     });
                 }
@@ -81,7 +80,7 @@ class StartMenu {
                     wm.open({
                         id: 'solitaire',
                         title: 'Solitaire',
-                        w: 600, h: 660,
+                        w: 600, h: 700,
                         content: solitaireApp.run(),
                         fixedSize: true
                     });
@@ -104,7 +103,6 @@ class StartMenu {
             {
                 icon: '💻', label: 'Run...',
                 action: () => {
-                    // Lanza la terminal
                     const termContent = terminal.run();
 
                     wm.open({
@@ -116,12 +114,10 @@ class StartMenu {
                 }
             },
             
-            //Separador visual (por ahora simple)
             {
                 icon: '🛑', label: 'Shut Down...',
                 action: () => {
-                    if(confirm('Are you sure you want to shut down?\n\nThis will clear all data and reset the system.')) {
-                        // Efecto visual (espera un poco)
+                    if(confirm('CRITICAL WARNING: This will simulate a Hard Power Off.\nAll user data, passwords, and saved files will be permanently deleted.\n\nAre you sure you want to continue?')) {
                         document.body.style.cursor = 'wait';
 
                         setTimeout(() => {
@@ -143,20 +139,19 @@ class StartMenu {
                 ],
                 events: {
                     click: () => {
-                        this.toggle(); //Cerrar menu
-                        item.action(); //Ejectuar accion
+                        this.toggle(); 
+                        item.action(); 
                     }
                 }
             });
             optionsContainer.appendChild(div);
         });
 
-        // 4.Ensamblar
         this.element.appendChild(sideBanner);
         this.element.appendChild(optionsContainer);
         document.body.appendChild(this.element);
 
-        //5. Detectar clicks fuera para cerrar
+        // Detectar clicks fuera para cerrar
         document.addEventListener('mousedown', (e) => {
             if(this.isVisible &&
                 !this.element.contains(e.target) &&
@@ -170,7 +165,7 @@ class StartMenu {
         this.isVisible = !this.isVisible;
         if (this.isVisible) {
             this.element.classList.add('visible');
-            $('.btn-start').classList.add('active'); //Efecto presionado para el btn
+            $('.btn-start').classList.add('active');
         } else{
             this.element.classList.remove('visible');
             $('.btn-start').classList.remove('active');

@@ -1,0 +1,228 @@
+/* - LOGIN.CSS - */
+
+#login-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 5000;
+    font-family: "MS Sans Serif", Arial, sans-serif;
+    font-size: 11px;
+}
+
+.login-bg-blur {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: var(--clr-teal);
+    background-image: url('../images/web95LOGO.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    filter: blur(6px) brightness(0.8);
+    z-index: 1;
+}
+
+#login-box-container {
+    position: relative;
+    z-index: 2;
+}
+
+.w95log-window {
+    width: 456px;
+    border: 2px solid;
+    border-color: #ffffff #808080 #808080 #ffffff;
+    background: #c0c0c0;
+    box-shadow: 1px 1px 0 0 #000;
+    color: #000;
+    box-sizing: border-box;
+}
+
+.w95log-window.create-mode {
+    width: 490px;
+}
+
+/* Title bar */
+.w95log-titlebar {
+    background: linear-gradient(90deg, #000080, #1084d0);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3px 4px 3px 6px;
+    height: 22px;
+    box-sizing: border-box;
+}
+
+.w95log-titlebar-text {
+    color: white;
+    font-weight: bold;
+    font-size: 11px;
+    letter-spacing: 0.2px;
+}
+
+.w95log-titlebar-buttons {
+    display: flex;
+    gap: 2px;
+}
+
+.w95log-tb-btn {
+    width: 16px;
+    height: 14px;
+    background: #c0c0c0;
+    border: 1.5px solid;
+    border-color: #ffffff #808080 #808080 #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: bold;
+    color: #000;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.w95log-tb-btn:active {
+    border-color: #808080 #ffffff #ffffff #808080;
+}
+
+.w95log-tb-btn.help::after { content: "?"; font-size: 10px; }
+.w95log-tb-btn.close::after { content: "✕"; font-size: 8px; }
+
+/* Main layout */
+.w95log-main-layout {
+    padding: 12px 14px 14px;
+    display: flex;
+    gap: 0;
+    box-sizing: border-box;
+}
+
+.w95log-icon-area {
+    flex-shrink: 0;
+    width: 52px;
+    display: flex;
+    align-items: flex-start;
+    padding-top: 4px;
+}
+
+.w95log-icon {
+    font-size: 38px;
+    line-height: 1;
+}
+
+/* Right side / Center col */
+.w95log-center-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.w95log-message {
+    font-size: 11px;
+    color: #000;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+/* Forms */
+.w95log-form-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.w95log-form-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.w95log-form-row label {
+    width: 72px;
+    text-align: left;
+    font-size: 11px;
+    flex-shrink: 0;
+    color: #000;
+}
+
+.w95log-form-row.create label {
+    width: 105px;
+}
+
+.w95log-form-row label u {
+    text-decoration: underline;
+}
+
+.w95log-input {
+    flex: 1;
+    height: 21px;
+    background: #fff;
+    border: 1.5px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+    outline: none;
+    padding: 2px 4px;
+    font-family: "MS Sans Serif", Arial, sans-serif;
+    font-size: 11px;
+    color: #000;
+    box-sizing: border-box;
+}
+
+/* Buttons */
+.w95log-btn-column {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-left: 12px;
+}
+
+.w95log-btn {
+    width: 72px;
+    height: 23px;
+    background: #c0c0c0;
+    border: 1.5px solid;
+    border-color: #ffffff #808080 #808080 #ffffff;
+    box-shadow: 1px 1px 0 0 #000;
+    cursor: pointer;
+    font-family: "MS Sans Serif", Arial, sans-serif;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.w95log-btn:active {
+    border-color: #808080 #ffffff #ffffff #808080;
+    box-shadow: none;
+    transform: translate(1px, 1px);
+}
+
+.w95log-btn.default {
+    border: 2px solid #000;
+    border-color: #000 #000 #000 #000;
+    padding: 1px;
+}
+
+.w95log-btn.default .inner {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    background: #c0c0c0;
+    border: 1.5px solid;
+    border-color: #fff #808080 #808080 #fff;
+    box-sizing: border-box;
+}
+
+.w95log-btn.default:active .inner {
+    border-color: #808080 #fff #fff #808080;
+}
+
+.w95log-btn.default:active {
+    box-shadow: 1px 1px 0 0 #000;
+    transform: none;
+}

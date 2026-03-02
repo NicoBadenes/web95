@@ -5,6 +5,7 @@
 
 import { mk, $ } from '../utils/dom.js';
 import { audio } from '../utils/audio.js';
+import { loginManager } from '../os/auth/login.js';
 
 const BOOT_CONFIG = {
     LINE_DELAY: 400, //Tiempo entre lineas
@@ -18,7 +19,7 @@ export async function initBootSequence() {
     const bootContainer = $('#boot-screen');
     const osRoot = $('#os-root');
 
-    // Estilos temporales para el texto de arranque (hardcoded por ahora)
+    // Estilos temporales para el texto de arranque
     biosScreen.style.color = '#fff';
     biosScreen.style.fontFamily = "'Courier New', monospace";
     biosScreen.style.padding = '20px';
@@ -51,19 +52,23 @@ export async function initBootSequence() {
 
     await sleep(BOOT_CONFIG.POST_DELAY);
 
-    //Ocultar BIOS y mostrar sistema
+    // Ocultar la pantalla de BIOS
     bootContainer.classList.add('hidden');
+
+    // INTERCEPTAR EN EL LOGIN
+    // Como la funcion es async, el await congela la ejecucion del booteo
+    // hasta que el usuario ponga la contraseña correcta o cree la cuenta.
+    await loginManager.prompt();
+
+    // Mostrar el sistema operativo
     osRoot.classList.remove('hidden');
 
-    //CAMBIO VISUAL FINAL: Fondo "Teal" de windows 95
+    // Cambio visual final, fondo Teal.
     document.body.style.backgroundColor = 'var(--clr-teal)';
     console.log("System Booted.");
 
-    // --- SONIDO DE INICIO ---
+    // Sonido de inicio
     audio.playStartupSound()
         .then(() => console.log("System Booted with Sound."))
         .catch(err => console.warn("Audio blocked by browser (Autoplay). System continued anyway."));
-    
-    // El codigo sigue ejecutandose igualmente, cargando iconos y UI
-    console.log("System Booted.");
 }

@@ -8,8 +8,5 @@
 @import url('./browser.css');
 @import url('./explorer.css');
 @import url('./snake.css');
-@import url('./contextmenu.css')
-
-/* Futuros imports 
-@import url('./components.css');
-*/
+@import url('./contextmenu.css');
+@import url('./login.css')
